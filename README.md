@@ -1,0 +1,2 @@
+# FastjsonScan
+FastjsonScan for burp

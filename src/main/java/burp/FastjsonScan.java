@@ -1,5 +1,6 @@
 package burp;
 
+import burp.extension.RemoteCmd;
 import burp.ui.Tags;
 import burp.utils.FindJsons;
 
@@ -60,6 +61,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
     public void processHttpMessage(int i, boolean b, IHttpRequestResponse iHttpRequestResponse) {
         // 对proxy&repeater进行监听
         if (i == IBurpExtenderCallbacks.TOOL_PROXY|| i == IBurpExtenderCallbacks.TOOL_REPEATER){
+
             stdout.println( helpers.analyzeRequest(iHttpRequestResponse).getContentType());
             FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
             String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
@@ -68,11 +70,16 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             String out = method + " : " + url + " : " + statusCode;
             // 判断数据包中是否存在json，有则加入到tags中
             if (findJsons.isParamsJson().isFlag()){
-                stdout.println(findJsons.isParamsJson().getJson());
+
+                RemoteCmd remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
+//                IHttpRequestResponse newRequestResonse = remoteCmd.run();
+//                stdout.println(findJsons.isParamsJson().getJson());
                 this.tags.getScanQueueTagClass().add(method,method,url,statusCode,findJsons.isParamsJson().getJson(),iHttpRequestResponse);
             }else if (findJsons.isContypeJson().isFlag()){
+                RemoteCmd remoteCmd = new RemoteCmd(callbacks, iHttpRequestResponse,helpers, null);
+                IHttpRequestResponse newRequestResonse = remoteCmd.run();
                 stdout.println(findJsons.isContypeJson().getJson());
-                this.tags.getScanQueueTagClass().add(method,method,url,statusCode,findJsons.isContypeJson().getJson(),iHttpRequestResponse);
+                this.tags.getScanQueueTagClass().add(method,method,url,statusCode,findJsons.isContypeJson().getJson(),newRequestResonse);
             }
         }
     }

@@ -32,7 +32,10 @@ public class FindJsons{
         List<IParameter> parameters = requestInfo.getParameters();
         for(IParameter parameter : parameters ){
             value = parameter.getValue();
-            return isJson(value);
+            TargetInfo targetInfo = isJson(value);
+            if (targetInfo.isFlag()){
+                return targetInfo;
+            }
         }
         return isJson(value);
     }
@@ -73,7 +76,7 @@ public class FindJsons{
             }
             return new TargetInfo(true,httpRequestBody,null,null);
         }
-        return new TargetInfo(true,httpRequestBody,null,null);
+        return new TargetInfo(false,httpRequestBody,null,null);
 
     }
 

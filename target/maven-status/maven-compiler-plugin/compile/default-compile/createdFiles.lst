@@ -1,7 +1,8 @@
-burp/FastjsonScan.class
-burp/ui/ScanQueueTag$TablesData.class
-burp/bean/TargetInfo.class
-burp/ui/ScanQueueTag.class
-burp/ui/ScanQueueTag$URLTable.class
-burp/ui/Tags.class
-burp/utils/FindJsons.class
+burp\ui\Tags.class
+burp\extension\RemoteCmd.class
+burp\ui\ScanQueueTag$URLTable.class
+burp\FastjsonScan.class
+burp\bean\TargetInfo.class
+burp\ui\ScanQueueTag.class
+burp\utils\FindJsons.class
+burp\ui\ScanQueueTag$TablesData.class

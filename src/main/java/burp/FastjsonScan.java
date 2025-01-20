@@ -66,6 +66,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
             String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
             String out = method + " : " + url + " : " + statusCode;
+            // 判断数据包中是否存在json，有则加入到tags中
             if (findJsons.isParamsJson().isFlag()){
                 stdout.println(findJsons.isParamsJson().getJson());
                 this.tags.getScanQueueTagClass().add(method,method,url,statusCode,findJsons.isParamsJson().getJson(),iHttpRequestResponse);

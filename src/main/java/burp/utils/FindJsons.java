@@ -58,15 +58,6 @@ public class FindJsons{
         TargetInfo targetInfo = new TargetInfo(result, json, null, null);
         return targetInfo;
     }
-//    public String fetchJson(String value,int x ,int y,boolean type){
-//        String json = null;
-//        if (type){
-//            json = value.substring(x, y + 1);
-//        }else {
-//
-//        }
-//
-//    }
 
     // post content-type:json
     public TargetInfo isContypeJson(){

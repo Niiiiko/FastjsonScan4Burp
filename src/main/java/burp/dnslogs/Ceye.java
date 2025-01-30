@@ -28,12 +28,16 @@ public class Ceye implements DnslogInterface{
         this.key = "3l7rni";
         this.predomain = customhelps.randomString(4);
         this.token = "34207baba06e1866cae98fbcd3369d36";
-
+    }
+    public String getKey(){
+        return this.key;
     }
 
     @Override
     public String getBodyContent() {
-        String url = String.format("%s/v1/records?token=%s&type=dns&filter=%s",api,token,predomain);
+//        String url = String.format("%s/v1/records?token=%s&type=dns&filter=%s",api,token,predomain);
+        String url = String.format("%s/v1/records?token=%s&type=dns&filter=",api,token);
+
         HttpRequest httpRequest = HttpRequest.get(url);
         String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/604.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
         httpRequest.header("User-Agent",ua);

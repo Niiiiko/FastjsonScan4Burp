@@ -9,13 +9,13 @@ package burp.bean;
 public class TargetInfo {
     private boolean flag;
     private String json;
-    private String payload;
+    private String key;
     private Integer id;
 
-    public TargetInfo(boolean flag, String json, String payload, Integer id) {
+    public TargetInfo(boolean flag, String json, String key, Integer id) {
         this.flag = flag;
         this.json = json;
-        this.payload = payload;
+        this.key = key;
         this.id = id;
     }
 
@@ -35,12 +35,12 @@ public class TargetInfo {
         this.json = json;
     }
 
-    public String getPayload() {
-        return payload;
+    public String getKey() {
+        return key;
     }
 
-    public void setPayload(String payload) {
-        this.payload = payload;
+    public void setkey(String key) {
+        this.key = key;
     }
 
     public Integer getId() {

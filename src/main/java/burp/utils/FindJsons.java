@@ -32,12 +32,34 @@ public class FindJsons{
         List<IParameter> parameters = requestInfo.getParameters();
         for(IParameter parameter : parameters ){
             value = parameter.getValue();
-            TargetInfo targetInfo = isJson(value);
+            TargetInfo targetInfo = isJson(parameter.getName(),value);
             if (targetInfo.isFlag()){
                 return targetInfo;
             }
         }
         return isJson(value);
+    }
+
+    private TargetInfo isJson(String parameter, String str) {
+        String key = null;
+        boolean result = false;
+        if (str != null && !str.isEmpty()) {
+            try {
+                str = URLDecoder.decode(str, "utf-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            str = str.trim();
+            if(str.indexOf("{") !=-1 && str.lastIndexOf("}")!=-1){
+                key = parameter;
+                result = true;
+            }else if (str.indexOf("[") !=-1 && str.lastIndexOf("]")!=-1){
+                key = parameter;
+                result = true;
+            }
+        }
+        TargetInfo targetInfo = new TargetInfo(result, json, key, null);
+        return targetInfo;
     }
 
     public TargetInfo isJson(String str) {

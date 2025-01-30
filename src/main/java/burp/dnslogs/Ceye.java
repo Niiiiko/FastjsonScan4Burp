@@ -35,8 +35,8 @@ public class Ceye implements DnslogInterface{
 
     @Override
     public String getBodyContent() {
-//        String url = String.format("%s/v1/records?token=%s&type=dns&filter=%s",api,token,predomain);
-        String url = String.format("%s/v1/records?token=%s&type=dns&filter=",api,token);
+        String url = String.format("%s/v1/records?token=%s&type=dns&filter=%s",api,token,predomain);
+//        String url = String.format("%s/v1/records?token=%s&type=dns&filter=",api,token);
 
         HttpRequest httpRequest = HttpRequest.get(url);
         String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/604.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
@@ -66,13 +66,13 @@ public class Ceye implements DnslogInterface{
 
     public static void main(String[] args) {
         Ceye ceye = new Ceye();
-        String url = String.format("http://%s.%s.ceye.io",ceye.getPredomain(),ceye.key);
-        HttpRequest httpRequest = HttpRequest.get(url);
-        String body = httpRequest.body();
-        httpRequest.readTimeout(30 * 1000);
-        httpRequest.connectTimeout(30 * 1000);
-
-        System.out.println(body);
+//        String url = String.format("http://%s.%s.ceye.io",ceye.getPredomain(),ceye.key);
+//        HttpRequest httpRequest = HttpRequest.get(url);
+//        String body = httpRequest.body();
+//        httpRequest.readTimeout(30 * 1000);
+//        httpRequest.connectTimeout(30 * 1000);
+//
+//        System.out.println(body);
         System.out.println(ceye.getBodyContent());
     }
 }

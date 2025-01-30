@@ -93,28 +93,23 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
                 String key = findJsons.isParamsJson().getKey();
                 RemoteCmd remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
+                boolean flag = true;
                 // 循环调用dnslog，填入payload
                 for(String payload : payloads){
                     Ceye ceye = new Ceye();
-                    randomList.add(ceye.getPredomain());
+//                    randomList.add(ceye.getPredomain());
                     String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
                     IHttpRequestResponse newRequestResonse = remoteCmd.run(payload.replace("dnslog-url",dnsurl),key);
-                    httpRequestResponseList.add(newRequestResonse);
-                }
-                String bodyContent = new Ceye().getBodyContent();
-                if (bodyContent == null|| bodyContent.length()<=0){
-                    this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[-] fastjson payloads not find",iHttpRequestResponse);
-                    return;
-                }
-                boolean flag = true;
-                for (int j = 0; j < randomList.size(); j++) {
-                    if (bodyContent.contains(randomList.get(j))){
+//                    httpRequestResponseList.add(newRequestResonse);
+                    String bodyContent = ceye.getBodyContent();
+                    if (bodyContent == null|| bodyContent.length()<=0){
+                        this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[-] fastjson payloads not find",iHttpRequestResponse);
+                    }else if (bodyContent.contains(ceye.getPredomain()+".")){
                         if (flag){
-                            this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",httpRequestResponseList.get(j));
+                            this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
                             flag = false;
-                        }else {
-                            this.tags.getScanQueueTagClass().add(method,method,url,statusCode,"[+] fastjson payloads",httpRequestResponseList.get(j));
                         }
+                        this.tags.getScanQueueTagClass().add(method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
                     }
                 }
             }else if (findJsons.isContypeJson().isFlag()){

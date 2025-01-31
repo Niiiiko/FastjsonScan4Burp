@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -37,6 +38,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
         this.stderr = new PrintWriter(callbacks.getStderr(), true);
         this.tags = new Tags(callbacks, name);
+        this.yamlReader = YamlReader.getInstance(callbacks);
         stdout.println("success");
 
         callbacks.addSuiteTab(this.tags);
@@ -75,56 +77,81 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
             String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
             String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-            String out = method + " : " + url + " : " + statusCode;
-            System.out.println();
-            // 后续考虑剥离：读取yml文件，获取payloads
-            this.yamlReader = YamlReader.getInstance(callbacks);
             List<String> payloads = this.yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
+            Iterator<String> payloadIterator = payloads.iterator();
             // 任务id
             int id = 0;
-            //
-            List<String> randomList = new ArrayList<String >();
-            //
-            List<IHttpRequestResponse> httpRequestResponseList = new ArrayList<IHttpRequestResponse >();
+            boolean flag = true;
             // 判断数据包中是否存在json，有则加入到tags中
             if (findJsons.isParamsJson().isFlag()){
                 // 先添加任务
-                id = this.tags.getScanQueueTagClass().add(method, method, url, statusCode, "find json param.wait for testing.", iHttpRequestResponse);
+                id = this.tags.getScanQueueTagClass().add(
+                        method,
+                        method,
+                        url,
+                        statusCode,
+                        "find json param.wait for testing.",
+                        iHttpRequestResponse);
 
                 String key = findJsons.isParamsJson().getKey();
                 RemoteCmd remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
-                boolean flag = true;
+                remoteCmd.insertPayloads();
                 // 循环调用dnslog，填入payload
-                for(String payload : payloads){
+                while (payloadIterator.hasNext()){
+                    String payload = payloadIterator.next();
                     Ceye ceye = new Ceye();
-//                    randomList.add(ceye.getPredomain());
                     String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
                     IHttpRequestResponse newRequestResonse = remoteCmd.run(payload.replace("dnslog-url",dnsurl),key);
-//                    httpRequestResponseList.add(newRequestResonse);
                     String bodyContent = ceye.getBodyContent();
-                    if (bodyContent == null|| bodyContent.length()<=0){
-                        this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[-] fastjson payloads not find",iHttpRequestResponse);
-                    }else if (bodyContent.contains(ceye.getPredomain()+".")){
-                        if (flag){
+
+                    //修正返回issus结果，仅for循环结束后或找到payload后才变为[+]/[-]
+                    if(bodyContent == null|| bodyContent.length()<=0) {
+                        boolean hasNext = payloadIterator.hasNext();
+                        if (!hasNext) {
+                            this.tags.getScanQueueTagClass().save(
+                                    id,
+                                    method,
+                                    method,
+                                    url,
+                                    statusCode,
+                                    "[-] fastjson payloads not find",
+                                    iHttpRequestResponse);
+                        }
+                        continue;
+                    }
+                    if (bodyContent.contains(ceye.getPredomain()+".")){
+                      if (flag){
                             this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
                             flag = false;
-                        }
-                        this.tags.getScanQueueTagClass().add(method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
+                        }else {
+                            this.tags.getScanQueueTagClass().add(method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
+                      }
                     }
+
                 }
             }else if (findJsons.isContypeJson().isFlag()){
                 id = this.tags.getScanQueueTagClass().add(method, method, url, statusCode, "find json body. wait for testing.", iHttpRequestResponse);
 
                 RemoteCmd remoteCmd = new RemoteCmd(callbacks, iHttpRequestResponse,helpers, null);
-                for(String payload : payloads){
+                while (payloadIterator.hasNext()){
+                    String payload = payloadIterator.next();
                     Ceye ceye = new Ceye();
                     String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
                     IHttpRequestResponse newRequestResonse = remoteCmd.run(payload.replace("dnslog-url",dnsurl));
                     String bodyContent = ceye.getBodyContent();
-                    if (bodyContent.contains(ceye.getPredomain())){
-                        this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
-                    }else {
-                        this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[-] fastjson payloads not find",newRequestResonse);
+                    if (bodyContent == null|| bodyContent.length()<=0){
+                        boolean hasNext = payloadIterator.hasNext();
+                        if (!hasNext){
+                            this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[-] fastjson payloads not find",iHttpRequestResponse);
+                        }
+                        continue;
+                    }
+                    if (bodyContent.contains(ceye.getPredomain()+".")){
+                        if (flag){
+                            this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
+                            flag = false;
+                        }
+                        this.tags.getScanQueueTagClass().add(method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
                     }
                 }
             }

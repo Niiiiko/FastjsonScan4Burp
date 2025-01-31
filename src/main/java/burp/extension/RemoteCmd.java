@@ -30,7 +30,6 @@ public class RemoteCmd {
 
     // 添加payload
     public IHttpRequestResponse run(String payload){
-//        payloads = Arrays.asList("{\"@type\":\"java.net.URL\",\"val\":\"http://dnslog\"}","c");
         byte[] request = iHttpRequestResponse.getRequest();
         IRequestInfo requestInfo = helpers.analyzeRequest(request);
         List<String> headers = requestInfo.getHeaders();
@@ -40,7 +39,6 @@ public class RemoteCmd {
 
 
     public IHttpRequestResponse run(String payloads,String key) {
-//        payloads = Arrays.asList("{\"@type\":\"java.net.URL\",\"val\":\"http://dnslog\"}","c");
         byte[] bytes;
         byte[] request = iHttpRequestResponse.getRequest();
         IRequestInfo requestInfo = helpers.analyzeRequest(request);
@@ -58,5 +56,8 @@ public class RemoteCmd {
             throw e;
         }
         return iHttpRequestResponse;
+    }
+
+    public void insertPayloads() {
     }
 }

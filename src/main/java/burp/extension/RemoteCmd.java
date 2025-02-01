@@ -3,6 +3,7 @@ package burp.extension;
 import burp.*;
 import burp.bean.Issus;
 import burp.dnslogs.Ceye;
+import burp.dnslogs.DnslogInterface;
 
 import java.net.URLEncoder;
 import java.util.*;
@@ -23,7 +24,14 @@ public class RemoteCmd {
     private IHttpRequestResponse iHttpRequestResponse;
 
     private IRequestInfo iRequestInfo;
+
     private List<Issus> issuses;
+
+    private List<String> randomList;
+
+    private List<IHttpRequestResponse> iHttpRequestResponseList;
+
+    private Issus issus;
 
     public RemoteCmd(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers, List<String> payloads) {
         this.callbacks = callbacks;
@@ -31,7 +39,10 @@ public class RemoteCmd {
         this.payloads = payloads;
         this.iHttpRequestResponse = iHttpRequestResponse;
         this.iRequestInfo = helpers.analyzeRequest(iHttpRequestResponse);
+        this.issus = null;
         this.issuses = new ArrayList<Issus>();
+        this.randomList = new ArrayList<>();
+        this.iHttpRequestResponseList = new ArrayList<>();
     }
 
     // 添加payload
@@ -65,20 +76,25 @@ public class RemoteCmd {
 
     public List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey) {
         boolean flag = true;
-        Issus issus = null;
-        List<String> randomList = new  ArrayList<String>();
+
+
         IHttpRequestResponse newRequestResonse = null;
         while (payloadIterator.hasNext()){
-            String payload = payloadIterator.next();
+            // dnslos 平台初始化
             Ceye ceye = new Ceye();
             String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
-            randomList.add(ceye.getPredomain());
+            // 记录随机值存入list中，以便二次验证
+
+
+            String payload = payloadIterator.next();
             if (jsonKey == null || jsonKey.length()<=0){
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
-
             }else {
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl),jsonKey);
             }
+            this.randomList.add(ceye.getPredomain());
+            this.iHttpRequestResponseList.add(newRequestResonse);
+
             String bodyContent = null;
             // 捕获api.ceye 503异常，避免导致issus未更新
             try {
@@ -89,20 +105,15 @@ public class RemoteCmd {
             }
             //修正返回issus结果：仅for循环结束后或找到payload后才变为[+]/[-]
             // dns平台返回为空且payload已循环完毕，则[-]， 否则直接跳入下一个循环
-            if(bodyContent == null|| bodyContent.length()<=0) {
-                boolean hasNext = payloadIterator.hasNext();
-                if (!hasNext) {
-                    issus = new Issus(this.iRequestInfo.getUrl().toString(),
-                            this.iRequestInfo.getMethod(),
-                            String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
-                            "None",
-                            "[-] fastjson payloads not find",
-                            this.iHttpRequestResponse,
-                            Issus.State.SAVE);
-                    issuses.add(issus);
+            if(bodyContent == null|| bodyContent.length()<=0){
+                //加入二次验证后需要在最后进行判断
+                if (!payloadIterator.hasNext()) {
+                    checkoutDnslog(ceye);
                 }
                 continue;
             }
+
+
             // dns平台有结果且匹配random 则[+]，否则[-]
             if (bodyContent.contains(ceye.getPredomain()+".")){
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
@@ -127,17 +138,67 @@ public class RemoteCmd {
                           Issus.State.ADD);
                     issuses.add(issus);
                 }
+            }
+            //加入二次验证后需要在最后进行判断
+            if (!payloadIterator.hasNext()) {
+                checkoutDnslog(ceye);
+            }
+
+        }
+        return issuses;
+    }
+    private void checkoutDnslog(DnslogInterface dnslog) {
+        try {
+            Thread.sleep(8000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        // 开始进行二次验证
+        String dnsLogBodyContent = dnslog.getBodyContent();
+        if (dnsLogBodyContent == null || dnsLogBodyContent.length() <= 0) {
+            issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                    this.iRequestInfo.getMethod(),
+                    String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+                    "twice function",
+                    "[-] fastjson payloads not find",
+                    this.iHttpRequestResponse,
+                    Issus.State.SAVE);
+            issuses.add(issus);
+            return;
+        }
+
+        // 这里进行二次判断
+        boolean isFirst = true;
+        for (int i = 0; i < randomList.size(); i++) {
+            // dnslog 内容匹配判断
+            if (!dnsLogBodyContent.contains(randomList.get(i))) {
+                if ((i + 1) != this.randomList.size()) {
+                    continue;
+                } else {
+                    return;
+                }
+            }
+            if (isFirst){
+                issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                        this.iRequestInfo.getMethod(),
+                        String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+                        "twice function",
+                        "[+] fastjson payloads",
+                        iHttpRequestResponseList.get(i),
+                        Issus.State.SAVE);
+                issuses.add(issus);
+                isFirst = false;
             }else {
                 issus = new Issus(this.iRequestInfo.getUrl().toString(),
                         this.iRequestInfo.getMethod(),
                         String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
-                        "None",
-                        "[-] fastjson payloads not find",
-                        this.iHttpRequestResponse,
-                        Issus.State.SAVE);
+                        "twice function",
+                        "[+] fastjson payloads",
+                        iHttpRequestResponseList.get(i),
+                        Issus.State.ADD);
                 issuses.add(issus);
             }
         }
-        return issuses;
     }
 }

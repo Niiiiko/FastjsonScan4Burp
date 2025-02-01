@@ -11,6 +11,7 @@ public class TargetInfo {
     private String json;
     private String key;
     private Integer id;
+    private String method;
 
     public TargetInfo(boolean flag, String json, String key, Integer id) {
         this.flag = flag;

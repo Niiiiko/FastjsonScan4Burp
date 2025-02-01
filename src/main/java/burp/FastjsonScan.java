@@ -1,5 +1,6 @@
 package burp;
 
+import burp.bean.Issus;
 import burp.dnslogs.Ceye;
 import burp.extension.RemoteCmd;
 import burp.ui.Tags;
@@ -81,7 +82,8 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             Iterator<String> payloadIterator = payloads.iterator();
             // 任务id
             int id = 0;
-            boolean flag = true;
+            String key = null;
+            RemoteCmd remoteCmd =null;
             // 判断数据包中是否存在json，有则加入到tags中
             if (findJsons.isParamsJson().isFlag()){
                 // 先添加任务
@@ -93,66 +95,42 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                         "find json param.wait for testing.",
                         iHttpRequestResponse);
 
-                String key = findJsons.isParamsJson().getKey();
-                RemoteCmd remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
-                remoteCmd.insertPayloads();
-                // 循环调用dnslog，填入payload
-                while (payloadIterator.hasNext()){
-                    String payload = payloadIterator.next();
-                    Ceye ceye = new Ceye();
-                    String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
-                    IHttpRequestResponse newRequestResonse = remoteCmd.run(payload.replace("dnslog-url",dnsurl),key);
-                    String bodyContent = ceye.getBodyContent();
-
-                    //修正返回issus结果，仅for循环结束后或找到payload后才变为[+]/[-]
-                    if(bodyContent == null|| bodyContent.length()<=0) {
-                        boolean hasNext = payloadIterator.hasNext();
-                        if (!hasNext) {
-                            this.tags.getScanQueueTagClass().save(
-                                    id,
-                                    method,
-                                    method,
-                                    url,
-                                    statusCode,
-                                    "[-] fastjson payloads not find",
-                                    iHttpRequestResponse);
-                        }
-                        continue;
-                    }
-                    if (bodyContent.contains(ceye.getPredomain()+".")){
-                      if (flag){
-                            this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
-                            flag = false;
-                        }else {
-                            this.tags.getScanQueueTagClass().add(method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
-                      }
-                    }
-
-                }
+                key = findJsons.isParamsJson().getKey();
+                remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
             }else if (findJsons.isContypeJson().isFlag()){
+                // 先添加任务
                 id = this.tags.getScanQueueTagClass().add(method, method, url, statusCode, "find json body. wait for testing.", iHttpRequestResponse);
+                remoteCmd = new RemoteCmd(callbacks, iHttpRequestResponse,helpers, null);
 
-                RemoteCmd remoteCmd = new RemoteCmd(callbacks, iHttpRequestResponse,helpers, null);
-                while (payloadIterator.hasNext()){
-                    String payload = payloadIterator.next();
-                    Ceye ceye = new Ceye();
-                    String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
-                    IHttpRequestResponse newRequestResonse = remoteCmd.run(payload.replace("dnslog-url",dnsurl));
-                    String bodyContent = ceye.getBodyContent();
-                    if (bodyContent == null|| bodyContent.length()<=0){
-                        boolean hasNext = payloadIterator.hasNext();
-                        if (!hasNext){
-                            this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[-] fastjson payloads not find",iHttpRequestResponse);
-                        }
-                        continue;
-                    }
-                    if (bodyContent.contains(ceye.getPredomain()+".")){
-                        if (flag){
-                            this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
-                            flag = false;
-                        }
-                        this.tags.getScanQueueTagClass().add(method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
-                    }
+            }
+
+            if (remoteCmd == null){
+                return;
+            }
+            // 循环调用dnslog，填入payload
+            List<Issus> issuses = remoteCmd.insertPayloads(payloadIterator, key);
+            for (Issus issus:issuses){
+                switch (issus.getState()){
+                    case SAVE:
+                        this.tags.getScanQueueTagClass().save(id,
+                                issus.getPayload(),
+                                issus.getMethod(),
+                                issus.getUrl(),
+                                issus.getStatus(),
+                                issus.getResult(),
+                                issus.getiHttpRequestResponse());
+                        break;
+                    case ADD:
+                        this.tags.getScanQueueTagClass().add(
+                                issus.getPayload(),
+                                issus.getMethod(),
+                                issus.getUrl(),
+                                issus.getStatus(),
+                                issus.getResult(),
+                                issus.getiHttpRequestResponse());
+                    case ERROR:
+                    case TIMEOUT:
+                        break;
                 }
             }
         }

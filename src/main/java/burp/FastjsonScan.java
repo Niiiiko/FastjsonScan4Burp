@@ -80,10 +80,16 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
             List<String> payloads = this.yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
             Iterator<String> payloadIterator = payloads.iterator();
-            // 任务id
-            int id = 0;
+
             String key = null;
             RemoteCmd remoteCmd =null;
+            remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
+
+            if (remoteCmd == null){
+                return;
+            }
+            // 熬夜重点对象
+            int id;
             // 判断数据包中是否存在json，有则加入到tags中
             if (findJsons.isParamsJson().isFlag()){
                 // 先添加任务
@@ -94,19 +100,20 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                         statusCode,
                         "find json param.wait for testing.",
                         iHttpRequestResponse);
-
                 key = findJsons.isParamsJson().getKey();
-                remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
             }else if (findJsons.isContypeJson().isFlag()){
                 // 先添加任务
-                id = this.tags.getScanQueueTagClass().add(method, method, url, statusCode, "find json body. wait for testing.", iHttpRequestResponse);
-                remoteCmd = new RemoteCmd(callbacks, iHttpRequestResponse,helpers, null);
-
-            }
-
-            if (remoteCmd == null){
+                id = this.tags.getScanQueueTagClass().add(
+                        method,
+                        method,
+                        url,
+                        statusCode,
+                        "find json body. wait for testing.",
+                        iHttpRequestResponse);
+            }else {
                 return;
             }
+
             // 循环调用dnslog，填入payload
             List<Issus> issuses = remoteCmd.insertPayloads(payloadIterator, key);
             for (Issus issus:issuses){

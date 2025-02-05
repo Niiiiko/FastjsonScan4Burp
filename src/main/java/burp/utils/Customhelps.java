@@ -75,17 +75,6 @@ public class Customhelps {
         File file = new File(configPath);
         properties = new Yaml().load(new FileInputStream(file));
     }
-    public void load2() throws FileNotFoundException {
-        String configPath = "/Users/niko/codes/IdeaProjects/Helloburps/src/main/resources/config.yml";
-        File file = new File(configPath);
-        properties = new Yaml().load(new FileInputStream(file));
-    }
 
-    public static void main(String[] args) throws FileNotFoundException {
-        Customhelps customhelps = new Customhelps();
-        customhelps.load2();
-        List<String> stringList = customhelps.getStringList("application.remoteCmdExtension.config.payloads");
-        System.out.println(stringList.get(4));
-    }
 
 }

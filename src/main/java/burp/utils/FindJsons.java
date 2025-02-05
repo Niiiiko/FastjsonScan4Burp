@@ -31,13 +31,16 @@ public class FindJsons{
         String value = null;
         List<IParameter> parameters = requestInfo.getParameters();
         for(IParameter parameter : parameters ){
-            value = parameter.getValue();
-            TargetInfo targetInfo = isJson(parameter.getName(),value);
-            if (targetInfo.isFlag()){
-                return targetInfo;
+            // 暂时不考虑对cookie进行fastjson检测
+            if (parameter.getType() == IParameter.PARAM_URL||parameter.getType() == IParameter.PARAM_BODY){
+                value = parameter.getValue();
+                TargetInfo targetInfo = isJson(parameter.getName(),value);
+                if (targetInfo.isFlag()){
+                    return targetInfo;
+                }
             }
         }
-        return isJson(value);
+        return new TargetInfo(false, null);
     }
 
     private TargetInfo isJson(String parameter, String str) {
@@ -58,7 +61,7 @@ public class FindJsons{
                 result = true;
             }
         }
-        TargetInfo targetInfo = new TargetInfo(result, json, key, null);
+        TargetInfo targetInfo = new TargetInfo(result, key);
         return targetInfo;
     }
 
@@ -80,7 +83,7 @@ public class FindJsons{
                 result = true;
             }
         }
-        TargetInfo targetInfo = new TargetInfo(result, json, null, null);
+        TargetInfo targetInfo = new TargetInfo(result, null);
         return targetInfo;
     }
 
@@ -96,20 +99,10 @@ public class FindJsons{
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
-            return new TargetInfo(true,httpRequestBody,null,null);
+            return new TargetInfo(true,null);
         }
-        return new TargetInfo(false,httpRequestBody,null,null);
+        return new TargetInfo(false,null);
 
-    }
-
-
-    public static void main(String[] args) {
-        String test = "faoing{\"aa\":1}FAF";
-
-        String json = test.substring(test.indexOf("{"), test.lastIndexOf("}")+1);
-        System.out.println(json);
-        System.out.println(test.lastIndexOf("}"));
-        System.out.println(test);
     }
 
 }

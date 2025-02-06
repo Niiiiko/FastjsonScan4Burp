@@ -34,10 +34,10 @@ public class RemoteCmd {
 
     private DnslogInterface dnsLog;
 
-    public RemoteCmd(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers, List<String> payloads) {
+    public RemoteCmd(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         this.callbacks = callbacks;
         this.helpers = helpers;
-        this.payloads = payloads;
+        this.payloads = new ArrayList<>();
         this.iHttpRequestResponse = iHttpRequestResponse;
         this.iRequestInfo = helpers.analyzeRequest(iHttpRequestResponse);
         this.dnsLog = null;
@@ -102,6 +102,7 @@ public class RemoteCmd {
             // 记录随机值存入list中，以便二次验证
             this.randomList.add(ceye.getPredomain());
             this.iHttpRequestResponseList.add(newRequestResonse);
+            this.payloads.add(payload);
 
             String bodyContent = null;
             // 捕获api.ceye 503异常，避免导致issus未更新
@@ -123,7 +124,7 @@ public class RemoteCmd {
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
                 if (flag){
 //                    this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
-                    issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                    issus = new Issus(this.iRequestInfo.getUrl(),
                             this.iRequestInfo.getMethod(),
                             String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
                             payload,
@@ -133,7 +134,7 @@ public class RemoteCmd {
                     issuses.add(issus);
                     flag = false;
                 }else {
-                  issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                  issus = new Issus(this.iRequestInfo.getUrl(),
                           this.iRequestInfo.getMethod(),
                             String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
                             payload,
@@ -152,13 +153,13 @@ public class RemoteCmd {
         }
         //加入二次验证后需要在最后进行判断
         // 熬夜重点对象
-        issuses = checkoutDnslog(new Ceye(),randomList,iHttpRequestResponseList);
+        issuses = checkoutDnslog(new Ceye(),randomList,iHttpRequestResponseList,payloads);
         PrintWriter printWriter = new PrintWriter(callbacks.getStdout(), true);
         printWriter.println("second: " + this.iRequestInfo.getUrl().toString());
 
         return issuses;
     }
-    private List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList) {
+    private List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads) {
         List<Issus> issuses = new ArrayList<>();
         try {
             Thread.sleep(8000);
@@ -171,10 +172,10 @@ public class RemoteCmd {
         try {
             String dnsLogAllContent = dnslog.getAllContent();
             if (dnsLogAllContent == null || dnsLogAllContent.length() <= 0) {
-                issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                issus = new Issus(this.iRequestInfo.getUrl(),
                         this.iRequestInfo.getMethod(),
                         String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
-                        "twice function",
+                        null,
                         "[-] fastjson payloads not find",
                         this.iHttpRequestResponse,
                         Issus.State.SAVE);
@@ -188,10 +189,10 @@ public class RemoteCmd {
                         if ((i + 1) != randlist.size()) {
                             continue;
                         } else {
-                            issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                            issus = new Issus(this.iRequestInfo.getUrl(),
                                     this.iRequestInfo.getMethod(),
                                     String.valueOf(helpers.analyzeResponse(httpRequestResponseList.get(i).getResponse()).getStatusCode()),
-                                    "twice function 2",
+                                    null,
                                     "[-] fastjson payloads not find",
                                     httpRequestResponseList.get(i),
                                     Issus.State.SAVE);
@@ -200,20 +201,20 @@ public class RemoteCmd {
                         }
                     }
                     if (isFirst){
-                        issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                        issus = new Issus(this.iRequestInfo.getUrl(),
                                 this.iRequestInfo.getMethod(),
                                 String.valueOf(helpers.analyzeResponse(httpRequestResponseList.get(i).getResponse()).getStatusCode()),
-                                "twice function",
+                                payloads.get(i),
                                 "[+] fastjson payloads save2",
                                 httpRequestResponseList.get(i),
                                 Issus.State.SAVE);
                         issuses.add(issus);
                         isFirst = false;
                     }else {
-                        issus = new Issus(this.iRequestInfo.getUrl().toString(),
+                        issus = new Issus(this.iRequestInfo.getUrl(),
                                 this.iRequestInfo.getMethod(),
                                 String.valueOf(helpers.analyzeResponse(httpRequestResponseList.get(i).getResponse()).getStatusCode()),
-                                "twice function",
+                                payloads.get(i),
                                 "[+] fastjson payloads add2",
                                 httpRequestResponseList.get(i),
                                 Issus.State.ADD);
@@ -223,7 +224,7 @@ public class RemoteCmd {
             }
             return issuses;
         } catch (Exception e) {
-            issus = new Issus(this.iRequestInfo.getUrl().toString(),
+            issus = new Issus(this.iRequestInfo.getUrl(),
                     this.iRequestInfo.getMethod(),
                     String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
                     "twice function",

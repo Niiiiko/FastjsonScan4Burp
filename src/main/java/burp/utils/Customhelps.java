@@ -60,9 +60,6 @@ public class Customhelps {
         }
         return finalValue == null ? null : finalValue.get(separatorKeys[separatorKeys.length - 1]);
     }
-    public List<String> getStringList(String key) {
-        return (List<String>) this.getValueByKey(key);
-    }
 
     public String getConfigPath(){
         int lastIndexOf = this.callbacks.getExtensionFilename().lastIndexOf(File.separator);

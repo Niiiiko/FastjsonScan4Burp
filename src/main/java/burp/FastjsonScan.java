@@ -18,7 +18,7 @@ import java.util.*;
  * @Date: 2025/1/16 17:07
  * @Description:
  */
-public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScannerCheck,IHttpListener{
+public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScannerCheck{
     private IBurpExtenderCallbacks callbacks;
     public String name = "FastjsonScan";
     private IScanIssue iScanIssue;
@@ -40,7 +40,8 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         stdout.println("success");
 
         callbacks.addSuiteTab(this.tags);
-        callbacks.registerHttpListener(this);
+        callbacks.registerScannerCheck(this);
+//        callbacks.registerHttpListener(this);
 
 
     }
@@ -52,7 +53,137 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse iHttpRequestResponse) {
-        return null;
+        List<IScanIssue> issues = new ArrayList<>();
+
+        List<String> domainNameBlacklist = this.yamlReader.getStringList("scan.domainName.blacklist");
+        List<String> domainNameWhitelist = this.yamlReader.getStringList("scan.domainName.whitelist");
+
+        // 基础url解析
+        CustomBurpUrl baseBurpUrl = new CustomBurpUrl(this.callbacks, iHttpRequestResponse);
+        // 判断域名黑名单
+        if (domainNameBlacklist != null && domainNameBlacklist.size() >= 1) {
+            if (isMatchDomainName(baseBurpUrl.getRequestHost(), domainNameBlacklist)) {
+                return null;
+            }
+        }
+
+        // 判断域名白名单
+        if (domainNameWhitelist != null && domainNameWhitelist.size() >= 1) {
+            if (!isMatchDomainName(baseBurpUrl.getRequestHost(), domainNameWhitelist)) {
+                return null;
+            }
+        }
+        // 判断当前请求后缀,是否为url黑名单后缀
+        if (this.isUrlBlackListSuffix(baseBurpUrl)) {
+            return null;
+        }
+//        // 对proxy&repeater进行监听
+//        if (i == IBurpExtenderCallbacks.TOOL_PROXY|| i == IBurpExtenderCallbacks.TOOL_REPEATER){
+
+        FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
+        String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
+        String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
+        String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
+        List<String> payloads = this.yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
+        Iterator<String> payloadIterator = payloads.iterator();
+
+        String key = null;
+        RemoteCmd remoteCmd =null;
+        remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers);
+
+        if (remoteCmd == null){
+            return null;
+        }
+        // 判断当前站点问题数量是否超出了
+        Integer issueNumber = this.yamlReader.getInteger("scan.issueNumber");
+        if (issueNumber != 0) {
+            Integer siteIssueNumber = this.getSiteIssueNumber(baseBurpUrl.getRequestDomainName());
+            if (siteIssueNumber >= issueNumber) {
+                    this.tags.getScanQueueTagClass().add(
+                            "",
+                            this.helpers.analyzeRequest(iHttpRequestResponse).getMethod(),
+                            baseBurpUrl.getHttpRequestUrl().toString(),
+                            this.helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode() + "",
+                            "the number of website problems has exceeded",
+                            iHttpRequestResponse
+                    );
+                return null;
+            }
+        }
+        // 判断当前站点是否超出扫描数量了
+        Integer siteScanNumber = this.yamlReader.getInteger("scan.siteScanNumber");
+        if (siteScanNumber != 0) {
+            Integer siteJsonNumber = this.getSiteJsonNumber(baseBurpUrl.getRequestDomainName());
+            if (siteJsonNumber >= siteScanNumber) {
+                    this.tags.getScanQueueTagClass().add(
+                            "",
+                            this.helpers.analyzeRequest(iHttpRequestResponse).getMethod(),
+                            baseBurpUrl.getHttpRequestUrl().toString(),
+                            this.helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode() + "",
+                            "the number of website scans exceeded",
+                            iHttpRequestResponse
+                    );
+
+                return null;
+            }
+        }
+
+        int id;
+        // 判断数据包中是否存在json，有则加入到tags中
+        if (findJsons.isParamsJson().isFlag()){
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json param.wait for testing.",
+                    iHttpRequestResponse);
+            key = findJsons.isParamsJson().getKey();
+        }else if (findJsons.isContypeJson().isFlag()){
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json body. wait for testing.",
+                    iHttpRequestResponse);
+        }else {
+            return null;
+        }
+        // 循环调用dnslog，填入payload
+        List<Issus> tabIssues = remoteCmd.insertPayloads(payloadIterator, key);
+        for (Issus tabIssue:tabIssues){
+            switch (tabIssue.getState()){
+                case SAVE:
+                    this.tags.getScanQueueTagClass().save(id,
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    if (tabIssue.getPayload() !=null)
+                        issues.add(tabIssue);
+                    break;
+                case ADD:
+                    this.tags.getScanQueueTagClass().add(
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    if (tabIssue.getPayload() !=null)
+                        issues.add(tabIssue);
+                    break;
+                case ERROR:
+                case TIMEOUT:
+                    break;
+            }
+        }
+        return issues;
     }
 
     @Override
@@ -65,104 +196,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         return 0;
     }
 
-    @Override
-    public void processHttpMessage(int i, boolean b, IHttpRequestResponse iHttpRequestResponse) {
-        List<IScanIssue> issues = new ArrayList<>();
-
-        List<String> domainNameBlacklist = this.yamlReader.getStringList("scan.domainName.blacklist");
-        List<String> domainNameWhitelist = this.yamlReader.getStringList("scan.domainName.whitelist");
-
-        // 基础url解析
-        CustomBurpUrl baseBurpUrl = new CustomBurpUrl(this.callbacks, iHttpRequestResponse);
-        // 判断域名黑名单
-        if (domainNameBlacklist != null && domainNameBlacklist.size() >= 1) {
-            if (isMatchDomainName(baseBurpUrl.getRequestHost(), domainNameBlacklist)) {
-                return;
-            }
-        }
-
-        // 判断域名白名单
-        if (domainNameWhitelist != null && domainNameWhitelist.size() >= 1) {
-            if (!isMatchDomainName(baseBurpUrl.getRequestHost(), domainNameWhitelist)) {
-                return;
-            }
-        }
-        // 判断当前请求后缀,是否为url黑名单后缀
-        if (this.isUrlBlackListSuffix(baseBurpUrl)) {
-            return;
-        }
-        // 对proxy&repeater进行监听
-        if (i == IBurpExtenderCallbacks.TOOL_PROXY|| i == IBurpExtenderCallbacks.TOOL_REPEATER){
-
-            stdout.println( helpers.analyzeRequest(iHttpRequestResponse).getContentType());
-            FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
-            String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
-            String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
-            String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-            List<String> payloads = this.yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
-            Iterator<String> payloadIterator = payloads.iterator();
-
-            String key = null;
-            RemoteCmd remoteCmd =null;
-            remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers, null);
-
-            if (remoteCmd == null){
-                return;
-            }
-            // 熬夜重点对象
-            int id;
-            // 判断数据包中是否存在json，有则加入到tags中
-            if (findJsons.isParamsJson().isFlag()){
-                // 先添加任务
-                id = this.tags.getScanQueueTagClass().add(
-                        method,
-                        method,
-                        url,
-                        statusCode,
-                        "find json param.wait for testing.",
-                        iHttpRequestResponse);
-                key = findJsons.isParamsJson().getKey();
-            }else if (findJsons.isContypeJson().isFlag()){
-                // 先添加任务
-                id = this.tags.getScanQueueTagClass().add(
-                        method,
-                        method,
-                        url,
-                        statusCode,
-                        "find json body. wait for testing.",
-                        iHttpRequestResponse);
-            }else {
-                return;
-            }
-
-            // 循环调用dnslog，填入payload
-            List<Issus> issuses = remoteCmd.insertPayloads(payloadIterator, key);
-            for (Issus issus:issuses){
-                switch (issus.getState()){
-                    case SAVE:
-                        this.tags.getScanQueueTagClass().save(id,
-                                issus.getPayload(),
-                                issus.getMethod(),
-                                issus.getUrl(),
-                                issus.getStatus(),
-                                issus.getResult(),
-                                issus.getiHttpRequestResponse());
-                        break;
-                    case ADD:
-                        this.tags.getScanQueueTagClass().add(
-                                issus.getPayload(),
-                                issus.getMethod(),
-                                issus.getUrl(),
-                                issus.getStatus(),
-                                issus.getResult(),
-                                issus.getiHttpRequestResponse());
-                    case ERROR:
-                    case TIMEOUT:
-                        break;
-                }
-            }
-        }
-    }
     /**
      * 判断是否查找的到指定的域名
      *
@@ -269,5 +302,35 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         }
 
         return false;
+    }
+    /**
+     * 网站问题数量
+     *
+     * @param domainName
+     * @return
+     */
+    private Integer getSiteIssueNumber(String domainName) {
+        Integer number = 0;
+
+        String issueName = this.yamlReader.getString("application.cmdEchoExtension.config.issueName");
+//        String issueName2 = this.yamlReader.getString("application.remoteCmdExtension.config.issueName");
+        issueName = "fastjson rce";
+        for (IScanIssue Issue : this.callbacks.getScanIssues(domainName)) {
+            if (Issue.getIssueName().equals(issueName)) {
+                number++;
+            }
+        }
+
+        return number;
+    }
+    private Integer getSiteJsonNumber(String domain){
+        Integer number = 0;
+         for(IHttpRequestResponse iHttpRequestResponse :this.callbacks.getSiteMap(domain)){
+             FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
+             if (findJsons.isParamsJson().isFlag()||findJsons.isContypeJson().isFlag()){
+                 number ++;
+             }
+         }
+        return number;
     }
 }

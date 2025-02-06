@@ -227,7 +227,7 @@ public class RemoteCmd {
             issus = new Issus(this.iRequestInfo.getUrl(),
                     this.iRequestInfo.getMethod(),
                     String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
-                    "twice function",
+                    null,
                     "[-] dnslog error",
                     this.iHttpRequestResponse,
                     Issus.State.SAVE);

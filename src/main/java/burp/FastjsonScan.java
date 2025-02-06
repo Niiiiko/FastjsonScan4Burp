@@ -2,15 +2,17 @@ package burp;
 
 import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
-import burp.dnslogs.Ceye;
 import burp.extension.RemoteCmd;
 import burp.ui.Tags;
 import burp.utils.FindJsons;
 import burp.utils.YamlReader;
 
-import java.io.FileNotFoundException;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @ClassName: FastjsonScan
@@ -18,7 +20,7 @@ import java.util.*;
  * @Date: 2025/1/16 17:07
  * @Description:
  */
-public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScannerCheck{
+public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScannerCheck,IContextMenuFactory{
     private IBurpExtenderCallbacks callbacks;
     public String name = "FastjsonScan";
     private IScanIssue iScanIssue;
@@ -31,7 +33,9 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
     private PrintWriter stderr;
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
+
         this.callbacks = callbacks;
+        callbacks.setExtensionName("FastJsonScan");
         this.helpers = callbacks.getHelpers();
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
         this.stderr = new PrintWriter(callbacks.getStderr(), true);
@@ -41,6 +45,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
         callbacks.addSuiteTab(this.tags);
         callbacks.registerScannerCheck(this);
+        callbacks.registerContextMenuFactory(this);
 //        callbacks.registerHttpListener(this);
 
 
@@ -77,9 +82,48 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         if (this.isUrlBlackListSuffix(baseBurpUrl)) {
             return null;
         }
-//        // 对proxy&repeater进行监听
-//        if (i == IBurpExtenderCallbacks.TOOL_PROXY|| i == IBurpExtenderCallbacks.TOOL_REPEATER){
+        // 判断当前站点问题数量是否超出了
+        Integer issueNumber = this.yamlReader.getInteger("scan.issueNumber");
+        if (issueNumber != 0) {
+            Integer siteIssueNumber = this.getSiteIssueNumber(baseBurpUrl.getRequestDomainName());
+            if (siteIssueNumber >= issueNumber) {
+                this.tags.getScanQueueTagClass().add(
+                        "",
+                        this.helpers.analyzeRequest(iHttpRequestResponse).getMethod(),
+                        baseBurpUrl.getHttpRequestUrl().toString(),
+                        this.helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode() + "",
+                        "the number of website problems has exceeded",
+                        iHttpRequestResponse
+                );
+                return null;
+            }
+        }
+        // 判断当前站点是否超出扫描数量了
+        Integer siteScanNumber = this.yamlReader.getInteger("scan.siteScanNumber");
+        if (siteScanNumber != 0) {
+            Integer siteJsonNumber = this.getSiteJsonNumber(baseBurpUrl.getRequestDomainName());
+            if (siteJsonNumber >= siteScanNumber) {
+                this.tags.getScanQueueTagClass().add(
+                        "",
+                        this.helpers.analyzeRequest(iHttpRequestResponse).getMethod(),
+                        baseBurpUrl.getHttpRequestUrl().toString(),
+                        this.helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode() + "",
+                        "the number of website scans exceeded",
+                        iHttpRequestResponse
+                );
 
+                return null;
+            }
+        }
+        for (Issus tabIssue:scan(iHttpRequestResponse)){
+            if (tabIssue.getPayload() !=null)
+                issues.add(tabIssue);
+        }
+        return issues;
+    }
+
+    private List<Issus> scan(IHttpRequestResponse iHttpRequestResponse){
+        List<Issus> tabIssues = new ArrayList<>();
         FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
         String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
         String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
@@ -93,39 +137,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
         if (remoteCmd == null){
             return null;
-        }
-        // 判断当前站点问题数量是否超出了
-        Integer issueNumber = this.yamlReader.getInteger("scan.issueNumber");
-        if (issueNumber != 0) {
-            Integer siteIssueNumber = this.getSiteIssueNumber(baseBurpUrl.getRequestDomainName());
-            if (siteIssueNumber >= issueNumber) {
-                    this.tags.getScanQueueTagClass().add(
-                            "",
-                            this.helpers.analyzeRequest(iHttpRequestResponse).getMethod(),
-                            baseBurpUrl.getHttpRequestUrl().toString(),
-                            this.helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode() + "",
-                            "the number of website problems has exceeded",
-                            iHttpRequestResponse
-                    );
-                return null;
-            }
-        }
-        // 判断当前站点是否超出扫描数量了
-        Integer siteScanNumber = this.yamlReader.getInteger("scan.siteScanNumber");
-        if (siteScanNumber != 0) {
-            Integer siteJsonNumber = this.getSiteJsonNumber(baseBurpUrl.getRequestDomainName());
-            if (siteJsonNumber >= siteScanNumber) {
-                    this.tags.getScanQueueTagClass().add(
-                            "",
-                            this.helpers.analyzeRequest(iHttpRequestResponse).getMethod(),
-                            baseBurpUrl.getHttpRequestUrl().toString(),
-                            this.helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode() + "",
-                            "the number of website scans exceeded",
-                            iHttpRequestResponse
-                    );
-
-                return null;
-            }
         }
 
         int id;
@@ -153,7 +164,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return null;
         }
         // 循环调用dnslog，填入payload
-        List<Issus> tabIssues = remoteCmd.insertPayloads(payloadIterator, key);
+        tabIssues = remoteCmd.insertPayloads(payloadIterator, key);
         for (Issus tabIssue:tabIssues){
             switch (tabIssue.getState()){
                 case SAVE:
@@ -164,8 +175,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                             tabIssue.getStatus(),
                             tabIssue.getResult(),
                             tabIssue.getiHttpRequestResponse());
-                    if (tabIssue.getPayload() !=null)
-                        issues.add(tabIssue);
                     break;
                 case ADD:
                     this.tags.getScanQueueTagClass().add(
@@ -175,15 +184,13 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                             tabIssue.getStatus(),
                             tabIssue.getResult(),
                             tabIssue.getiHttpRequestResponse());
-                    if (tabIssue.getPayload() !=null)
-                        issues.add(tabIssue);
                     break;
                 case ERROR:
                 case TIMEOUT:
                     break;
             }
         }
-        return issues;
+        return tabIssues;
     }
 
     @Override
@@ -332,5 +339,37 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
              }
          }
         return number;
+    }
+
+    @Override
+    public List<JMenuItem> createMenuItems(IContextMenuInvocation iContextMenuInvocation) {
+        List<JMenuItem> menuItems = new ArrayList<>();
+        if (iContextMenuInvocation.getToolFlag() != IBurpExtenderCallbacks.TOOL_REPEATER){
+            return menuItems;
+        }
+        JMenuItem jMenuItem = new JMenuItem("send to scan");
+        jMenuItem.addActionListener(new ContextMenuActionListener(iContextMenuInvocation));
+//        JMenuItem jMenuItem2 = new JMenuItem("specific scan");
+//        jMenuItem.addActionListener(e -> scan(iContextMenuInvocation.getSelectedMessages()[0]));
+        menuItems.add(jMenuItem);
+//        menuItems.add(jMenuItem2);
+        return menuItems;
+    }
+
+    private class ContextMenuActionListener implements ActionListener {
+        IContextMenuInvocation invocation;
+        public ContextMenuActionListener(IContextMenuInvocation invocation) {
+            this.invocation = invocation;
+        }
+        @Override
+        public void actionPerformed(ActionEvent actionEvent) {
+            CompletableFuture.supplyAsync(() -> {
+                scan(invocation.getSelectedMessages()[0]);
+                return null;
+            }).exceptionally(ex -> {
+                ex.printStackTrace();
+                return null;
+            });
+        }
     }
 }

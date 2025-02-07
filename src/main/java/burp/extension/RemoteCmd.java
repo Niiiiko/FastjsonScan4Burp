@@ -15,7 +15,7 @@ import java.util.*;
  * @Date: 2025/1/20 17:25
  * @Description:
  */
-public class RemoteCmd {
+public class RemoteCmd extends BaseScan{
     private IBurpExtenderCallbacks callbacks;
 
     private IExtensionHelpers helpers;
@@ -26,8 +26,6 @@ public class RemoteCmd {
 
     private IRequestInfo iRequestInfo;
 
-//    private List<Issus> issuses;
-
     private List<String> randomList;
 
     private List<IHttpRequestResponse> iHttpRequestResponseList;
@@ -35,6 +33,7 @@ public class RemoteCmd {
     private DnslogInterface dnsLog;
 
     public RemoteCmd(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
+        super(callbacks,iHttpRequestResponse,helpers);
         this.callbacks = callbacks;
         this.helpers = helpers;
         this.payloads = new ArrayList<>();
@@ -47,34 +46,35 @@ public class RemoteCmd {
     }
 
     // 添加payload
-    public IHttpRequestResponse run(String payload){
-
-        List<String> headers = this.iRequestInfo.getHeaders();
-        byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
-        return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
-    }
-
-
-    public IHttpRequestResponse run(String payloads,String key) {
-        byte[] bytes;
-        byte[] request = iHttpRequestResponse.getRequest();
-        try {
-            List<IParameter> parameters = this.iRequestInfo.getParameters();
-            // 寻找json param位置
-            for (IParameter parameter:parameters){
-                if (key.equals(parameter.getName())){
-                    IParameter parameter1 = helpers.buildParameter(key, URLEncoder.encode(payloads), IParameter.PARAM_URL);
-                    bytes = helpers.updateParameter(request, parameter1);
-                    return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),bytes);
-                }
-            }
-        }catch (Exception e){
-            throw e;
-        }
-        return iHttpRequestResponse;
-    }
+//    public IHttpRequestResponse run(String payload){
+//
+//        List<String> headers = this.iRequestInfo.getHeaders();
+//        byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
+//        return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
+//    }
 
 
+//    public IHttpRequestResponse run(String payloads,String key) {
+//        byte[] bytes;
+//        byte[] request = iHttpRequestResponse.getRequest();
+//        try {
+//            List<IParameter> parameters = this.iRequestInfo.getParameters();
+//            // 寻找json param位置
+//            for (IParameter parameter:parameters){
+//                if (key.equals(parameter.getName())){
+//                    IParameter parameter1 = helpers.buildParameter(key, URLEncoder.encode(payloads), IParameter.PARAM_URL);
+//                    bytes = helpers.updateParameter(request, parameter1);
+//                    return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),bytes);
+//                }
+//            }
+//        }catch (Exception e){
+//            throw e;
+//        }
+//        return iHttpRequestResponse;
+//    }
+
+
+    @Override
     public List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey) {
         boolean flag = true;
         boolean havePoc = false;
@@ -84,7 +84,7 @@ public class RemoteCmd {
         IHttpRequestResponse newRequestResonse = null;
         while (payloadIterator.hasNext()){
             try {
-                Thread.sleep(400);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

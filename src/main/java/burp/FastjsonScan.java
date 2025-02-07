@@ -115,15 +115,18 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                 return null;
             }
         }
-        for (Issus tabIssue:scan(iHttpRequestResponse)){
-            if (tabIssue.getPayload() !=null)
-                issues.add(tabIssue);
+        // 避免迭代器为空报错
+        List<Issus> tabIssues = scan(iHttpRequestResponse);
+        if (tabIssues != null){
+            for (Issus tabIssue:tabIssues){
+                if (tabIssue.getPayload() !=null)
+                    issues.add(tabIssue);
+            }
         }
         return issues;
     }
 
     private List<Issus> scan(IHttpRequestResponse iHttpRequestResponse){
-        List<Issus> tabIssues = new ArrayList<>();
         FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
         String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
         String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
@@ -164,7 +167,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return null;
         }
         // 循环调用dnslog，填入payload
-        tabIssues = remoteCmd.insertPayloads(payloadIterator, key);
+        List<Issus> tabIssues  = remoteCmd.insertPayloads(payloadIterator, key);
         for (Issus tabIssue:tabIssues){
             switch (tabIssue.getState()){
                 case SAVE:

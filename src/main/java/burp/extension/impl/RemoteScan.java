@@ -1,12 +1,12 @@
-package burp.extension;
+package burp.extension.impl;
 
 import burp.*;
 import burp.bean.Issus;
 import burp.dnslogs.Ceye;
 import burp.dnslogs.DnslogInterface;
+import burp.extension.BaseScan;
 
 import java.io.PrintWriter;
-import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -15,34 +15,33 @@ import java.util.*;
  * @Date: 2025/1/20 17:25
  * @Description:
  */
-public class RemoteCmd extends BaseScan{
-    private IBurpExtenderCallbacks callbacks;
+public class RemoteScan extends BaseScan {
+//    private IBurpExtenderCallbacks callbacks;
+//
+//    private IExtensionHelpers helpers;
 
-    private IExtensionHelpers helpers;
+//    private List<String> payloads;
 
-    private List<String> payloads;
+//    private IHttpRequestResponse iHttpRequestResponse;
 
-    private IHttpRequestResponse iHttpRequestResponse;
+//    private IRequestInfo iRequestInfo;
 
-    private IRequestInfo iRequestInfo;
+//    private List<String> randomList;
 
-    private List<String> randomList;
+//    private List<IHttpRequestResponse> iHttpRequestResponseList;
 
-    private List<IHttpRequestResponse> iHttpRequestResponseList;
+//    private DnslogInterface dnsLog;
 
-    private DnslogInterface dnsLog;
-
-    public RemoteCmd(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
+    public RemoteScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         super(callbacks,iHttpRequestResponse,helpers);
-        this.callbacks = callbacks;
-        this.helpers = helpers;
-        this.payloads = new ArrayList<>();
-        this.iHttpRequestResponse = iHttpRequestResponse;
-        this.iRequestInfo = helpers.analyzeRequest(iHttpRequestResponse);
-        this.dnsLog = null;
+//        this.callbacks = callbacks;
+//        this.helpers = helpers;
+//        this.payloads = new ArrayList<>();
+//        this.iHttpRequestResponse = iHttpRequestResponse;
+//        this.iRequestInfo = helpers.analyzeRequest(iHttpRequestResponse);
 //        this.issuses = new ArrayList<Issus>();
-        this.randomList = new ArrayList<>();
-        this.iHttpRequestResponseList = new ArrayList<>();
+//        this.randomList = new ArrayList<>();
+//        this.iHttpRequestResponseList = new ArrayList<>();
     }
 
     // 添加payload
@@ -83,16 +82,14 @@ public class RemoteCmd extends BaseScan{
 
         IHttpRequestResponse newRequestResonse = null;
         while (payloadIterator.hasNext()){
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+//            try {
+//                Thread.sleep(1200);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
             // dnslos 平台初始化
             Ceye ceye = new Ceye();
             String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
-
-
             String payload = payloadIterator.next();
             if (jsonKey == null || jsonKey.length()<=0){
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
@@ -100,7 +97,7 @@ public class RemoteCmd extends BaseScan{
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl),jsonKey);
             }
             // 记录随机值存入list中，以便二次验证
-            this.randomList.add(ceye.getPredomain());
+            randomList.add(ceye.getPredomain());
             this.iHttpRequestResponseList.add(newRequestResonse);
             this.payloads.add(payload);
 

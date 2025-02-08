@@ -16,7 +16,7 @@ import java.util.List;
  * @Date: 2025/2/7 21:50
  * @Description:
  */
-abstract class BaseScan {
+public abstract class BaseScan {
     protected IBurpExtenderCallbacks callbacks;
 
     protected IExtensionHelpers helpers;
@@ -45,17 +45,24 @@ abstract class BaseScan {
         this.iHttpRequestResponseList = new ArrayList<>();
     }
 
-    protected IHttpRequestResponse run(String payload,String cmdHeader){
-
+    protected IHttpRequestResponse run(String payload){
+        try {
+            Thread.sleep(1200);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         List<String> headers = this.iRequestInfo.getHeaders();
-        headers.add(cmdHeader);
         byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
         return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
     }
 
 
-    protected IHttpRequestResponse run(String payloads,String key,String cmdHeader) {
-        byte[] bytes;
+    protected IHttpRequestResponse run(String payloads,String key) {
+        try {
+            Thread.sleep(1200);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         byte[] request = iHttpRequestResponse.getRequest();
         try {
             List<IParameter> parameters = this.iRequestInfo.getParameters();
@@ -72,25 +79,15 @@ abstract class BaseScan {
                         newParam = helpers.buildParameter(key, URLEncoder.encode(payloads), IParameter.PARAM_BODY);
                     }
                     request = helpers.updateParameter(request, newParam);
+                    return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),request);
                 }
             }
-            byte[] body = new byte[0];
-            if ("POST".equalsIgnoreCase(this.iRequestInfo.getMethod())){
-                // 如果存在请求体，提取请求体内容；否则用空数组
-                int bodyOffset = this.iRequestInfo.getBodyOffset();
-                body = request.length > bodyOffset
-                        ? Arrays.copyOfRange(request, bodyOffset, request.length)
-                        : new byte[0];
-            }
-            List<String> headers = this.iRequestInfo.getHeaders();
-            headers.add(cmdHeader);
-            byte[] newBytes = helpers.buildHttpMessage(headers, body);
-            return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),newBytes);
 
         }catch (Exception e){
             throw e;
         }
+        return iHttpRequestResponse;
     }
-    abstract List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey);
+    public abstract List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey);
 
 }

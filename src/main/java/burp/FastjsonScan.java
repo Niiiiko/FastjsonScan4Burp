@@ -2,7 +2,9 @@ package burp;
 
 import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
-import burp.extension.RemoteCmd;
+import burp.extension.BaseScan;
+import burp.extension.impl.LocalScan;
+import burp.extension.impl.RemoteScan;
 import burp.ui.Tags;
 import burp.utils.FindJsons;
 import burp.utils.YamlReader;
@@ -46,8 +48,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         callbacks.addSuiteTab(this.tags);
         callbacks.registerScannerCheck(this);
         callbacks.registerContextMenuFactory(this);
-//        callbacks.registerHttpListener(this);
-
 
     }
 
@@ -115,10 +115,15 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                 return null;
             }
         }
-        // 避免迭代器为空报错
+        // todo 避免迭代器为空报错
         List<Issus> tabIssues = scan(iHttpRequestResponse);
-        if (tabIssues != null){
-            for (Issus tabIssue:tabIssues){
+        List<Issus> tabIssues2 = scan2(iHttpRequestResponse);
+        Set<Issus> mergedSet = new LinkedHashSet<>();
+        mergedSet.addAll(tabIssues);
+        mergedSet.addAll(tabIssues2);
+        List<Issus> allIssues = new ArrayList<>(mergedSet);
+        if (allIssues != null){
+            for (Issus tabIssue:allIssues){
                 if (tabIssue.getPayload() !=null)
                     issues.add(tabIssue);
             }
@@ -126,19 +131,136 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         return issues;
     }
 
+    /**
+     * 出网模块扫描
+     * @return List<Issus>
+     */
     private List<Issus> scan(IHttpRequestResponse iHttpRequestResponse){
         FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
         String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
         String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
         String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
         List<String> payloads = this.yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
+
         Iterator<String> payloadIterator = payloads.iterator();
 
         String key = null;
-        RemoteCmd remoteCmd =null;
-        remoteCmd = new RemoteCmd(callbacks,iHttpRequestResponse ,helpers);
+        BaseScan remoteScan = new RemoteScan(callbacks,iHttpRequestResponse ,helpers);
+//        if (remoteCmd == null){
+//            return null;
+//        }
 
-        if (remoteCmd == null){
+        int id;
+        // 判断数据包中是否存在json，有则加入到tags中
+        if (findJsons.isParamsJson().isFlag()){
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json param.wait for testing.",
+                    iHttpRequestResponse);
+            key = findJsons.isParamsJson().getKey();
+        }else if (findJsons.isContypeJson().isFlag()){
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json body. wait for testing.",
+                    iHttpRequestResponse);
+        }else {
+            return null;
+        }
+        // 循环调用dnslog，填入payload
+        List<Issus> tabIssues  = remoteScan.insertPayloads(payloadIterator, key);
+        for (Issus tabIssue:tabIssues){
+            switch (tabIssue.getState()){
+                case SAVE:
+                    this.tags.getScanQueueTagClass().save(id,
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    break;
+                case ADD:
+                    this.tags.getScanQueueTagClass().add(
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    break;
+                case ERROR:
+                case TIMEOUT:
+                    break;
+            }
+        }
+//        BaseScan cmdScan =null;
+//        cmdScan = new CmdScan(callbacks, iHttpRequestResponse, helpers);
+//        if (cmdScan == null){
+//            return null;
+//        }
+//        List<String> payloads2 = this.yamlReader.getStringList("application.cmdEchoExtension.config.payloads");
+//        if (payloads2 ==null){
+//            this.stderr.println("application.cmdEchoExtension.config.payloads is null");
+//            this.stderr.println("check out your config.yml");
+//        }
+//        Iterator<String> payloadIterator2 = payloads2.iterator();
+//        List<Issus> tabIssues2  = null;
+//        tabIssues2 = cmdScan.insertPayloads(payloadIterator2, key);
+//        for (Issus tabIssue:tabIssues2){
+//            switch (tabIssue.getState()){
+//                case SAVE:
+//                    this.tags.getScanQueueTagClass().save(id,
+//                            tabIssue.getPayload(),
+//                            tabIssue.getMethod(),
+//                            tabIssue.getUrl().toString(),
+//                            tabIssue.getStatus(),
+//                            tabIssue.getResult(),
+//                            tabIssue.getiHttpRequestResponse());
+//                    break;
+//                case ADD:
+//                    this.tags.getScanQueueTagClass().add(
+//                            tabIssue.getPayload(),
+//                            tabIssue.getMethod(),
+//                            tabIssue.getUrl().toString(),
+//                            tabIssue.getStatus(),
+//                            tabIssue.getResult(),
+//                            tabIssue.getiHttpRequestResponse());
+//                    break;
+//                case ERROR:
+//                case TIMEOUT:
+//                    break;
+//            }
+//        }
+//        List<Issus> mergedtabIssues = new ArrayList<>(tabIssues);
+//        mergedtabIssues.addAll(tabIssues);
+        return tabIssues;
+    }
+
+    /**
+     * 不出网模块扫描
+     * @return List<Issus>
+     */
+    private List<Issus> scan2(IHttpRequestResponse iHttpRequestResponse){
+        FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
+        String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
+        String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
+        String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
+        List<String> payloads = this.yamlReader.getStringList("application.cmdEchoExtension.config.payloads");
+        Iterator<String> payloadIterator = payloads.iterator();
+
+        String key = null;
+        BaseScan baseScan =null;
+        baseScan = new LocalScan(callbacks,iHttpRequestResponse ,helpers);
+
+        if (baseScan == null){
             return null;
         }
 
@@ -167,7 +289,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return null;
         }
         // 循环调用dnslog，填入payload
-        List<Issus> tabIssues  = remoteCmd.insertPayloads(payloadIterator, key);
+        List<Issus> tabIssues  = baseScan.insertPayloads(payloadIterator, key);
         for (Issus tabIssue:tabIssues){
             switch (tabIssue.getState()){
                 case SAVE:
@@ -350,29 +472,42 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         if (iContextMenuInvocation.getToolFlag() != IBurpExtenderCallbacks.TOOL_REPEATER){
             return menuItems;
         }
-        JMenuItem jMenuItem = new JMenuItem("send to scan");
-        jMenuItem.addActionListener(new ContextMenuActionListener(iContextMenuInvocation));
-//        JMenuItem jMenuItem2 = new JMenuItem("specific scan");
-//        jMenuItem.addActionListener(e -> scan(iContextMenuInvocation.getSelectedMessages()[0]));
+        JMenuItem jMenuItem = new JMenuItem("RemoteScan");
+        jMenuItem.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,true));
+        JMenuItem jMenuItem2 = new JMenuItem("LocalScan");
+        jMenuItem2.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,false));
         menuItems.add(jMenuItem);
-//        menuItems.add(jMenuItem2);
+        menuItems.add(jMenuItem2);
         return menuItems;
     }
 
     private class ContextMenuActionListener implements ActionListener {
         IContextMenuInvocation invocation;
-        public ContextMenuActionListener(IContextMenuInvocation invocation) {
+        boolean flag;
+        public ContextMenuActionListener(IContextMenuInvocation invocation,boolean flag) {
             this.invocation = invocation;
+            this.flag = flag;
         }
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
-            CompletableFuture.supplyAsync(() -> {
-                scan(invocation.getSelectedMessages()[0]);
-                return null;
-            }).exceptionally(ex -> {
-                ex.printStackTrace();
-                return null;
-            });
+            if (flag){
+                CompletableFuture.supplyAsync(() -> {
+                    scan(invocation.getSelectedMessages()[0]);
+                    return null;
+                }).exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return null;
+                });
+            }else {
+                CompletableFuture.supplyAsync(() -> {
+                    scan2(invocation.getSelectedMessages()[0]);
+                    return null;
+                }).exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return null;
+                });
+            }
+
         }
     }
 }

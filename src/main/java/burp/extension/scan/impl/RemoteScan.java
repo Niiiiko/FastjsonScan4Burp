@@ -1,12 +1,14 @@
-package burp.extension.impl;
+package burp.extension.scan.impl;
 
 import burp.*;
 import burp.bean.Issus;
-import burp.dnslogs.Ceye;
+import burp.dnslogs.DnsLog;
 import burp.dnslogs.DnslogInterface;
-import burp.extension.BaseScan;
+import burp.extension.scan.BaseScan;
+import burp.utils.YamlReader;
 
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -16,70 +18,18 @@ import java.util.*;
  * @Description:
  */
 public class RemoteScan extends BaseScan {
-//    private IBurpExtenderCallbacks callbacks;
-//
-//    private IExtensionHelpers helpers;
-
-//    private List<String> payloads;
-
-//    private IHttpRequestResponse iHttpRequestResponse;
-
-//    private IRequestInfo iRequestInfo;
-
-//    private List<String> randomList;
-
-//    private List<IHttpRequestResponse> iHttpRequestResponseList;
-
-//    private DnslogInterface dnsLog;
-
     public RemoteScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         super(callbacks,iHttpRequestResponse,helpers);
-//        this.callbacks = callbacks;
-//        this.helpers = helpers;
-//        this.payloads = new ArrayList<>();
-//        this.iHttpRequestResponse = iHttpRequestResponse;
-//        this.iRequestInfo = helpers.analyzeRequest(iHttpRequestResponse);
-//        this.issuses = new ArrayList<Issus>();
-//        this.randomList = new ArrayList<>();
-//        this.iHttpRequestResponseList = new ArrayList<>();
     }
 
-    // 添加payload
-//    public IHttpRequestResponse run(String payload){
-//
-//        List<String> headers = this.iRequestInfo.getHeaders();
-//        byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
-//        return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
-//    }
-
-
-//    public IHttpRequestResponse run(String payloads,String key) {
-//        byte[] bytes;
-//        byte[] request = iHttpRequestResponse.getRequest();
-//        try {
-//            List<IParameter> parameters = this.iRequestInfo.getParameters();
-//            // 寻找json param位置
-//            for (IParameter parameter:parameters){
-//                if (key.equals(parameter.getName())){
-//                    IParameter parameter1 = helpers.buildParameter(key, URLEncoder.encode(payloads), IParameter.PARAM_URL);
-//                    bytes = helpers.updateParameter(request, parameter1);
-//                    return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),bytes);
-//                }
-//            }
-//        }catch (Exception e){
-//            throw e;
-//        }
-//        return iHttpRequestResponse;
-//    }
-
-
     @Override
-    public List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey) {
+    public List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
         boolean flag = true;
         boolean havePoc = false;
         Issus issus = null;
         List<Issus> issuses = new ArrayList<>();
-
+        // dnslos 平台初始化
+        YamlReader yamlReader = YamlReader.getInstance(callbacks);
         IHttpRequestResponse newRequestResonse = null;
         while (payloadIterator.hasNext()){
 //            try {
@@ -87,9 +37,8 @@ public class RemoteScan extends BaseScan {
 //            } catch (InterruptedException e) {
 //                throw new RuntimeException(e);
 //            }
-            // dnslos 平台初始化
-            Ceye ceye = new Ceye();
-            String dnsurl = String.format("%s.%s.ceye.io", ceye.getPredomain(), ceye.getKey());
+            DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
+            String dnsurl = dnslog.getRandomDnsUrl();
             String payload = payloadIterator.next();
             if (jsonKey == null || jsonKey.length()<=0){
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
@@ -97,14 +46,14 @@ public class RemoteScan extends BaseScan {
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl),jsonKey);
             }
             // 记录随机值存入list中，以便二次验证
-            randomList.add(ceye.getPredomain());
+            randomList.add(dnslog.getRandomPredomain());
             this.iHttpRequestResponseList.add(newRequestResonse);
-            this.payloads.add(payload);
+            this.payloads.add(payload.replace("dnslog-url",dnsurl));
 
             String bodyContent = null;
             // 捕获api.ceye 503异常，避免导致issus未更新
             try {
-                bodyContent = ceye.getBodyContent();
+                bodyContent = dnslog.getBodyContent();
             } catch (Exception e) {
                 bodyContent = null;
                 System.err.println("获取 bodyContent 失败：" + e.getMessage()); // 记录错误信息
@@ -116,14 +65,12 @@ public class RemoteScan extends BaseScan {
             }
 
             // dns平台有结果且匹配random 则[+]，否则[-]
-            if (bodyContent.contains(ceye.getPredomain()+".")){
-                havePoc = true;
+            if (bodyContent.contains(dnslog.getRandomPredomain())){
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
                 if (flag){
-//                    this.tags.getScanQueueTagClass().save(id,method,method,url,statusCode,"[+] fastjson payloads",newRequestResonse);
-                    issus = new Issus(this.iRequestInfo.getUrl(),
-                            this.iRequestInfo.getMethod(),
-                            String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson payloads save",
                             newRequestResonse,
@@ -131,9 +78,9 @@ public class RemoteScan extends BaseScan {
                     issuses.add(issus);
                     flag = false;
                 }else {
-                  issus = new Issus(this.iRequestInfo.getUrl(),
-                          this.iRequestInfo.getMethod(),
-                            String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+                  issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                          customBurpUrl.getRequestMethod(),
+                          customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson payloads add",
                             newRequestResonse,
@@ -150,10 +97,7 @@ public class RemoteScan extends BaseScan {
         }
         //加入二次验证后需要在最后进行判断
         // 熬夜重点对象
-        issuses = checkoutDnslog(new Ceye(),randomList,iHttpRequestResponseList,payloads);
-        PrintWriter printWriter = new PrintWriter(callbacks.getStdout(), true);
-        printWriter.println("second: " + this.iRequestInfo.getUrl().toString());
-
+        issuses = checkoutDnslog(new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads);
         return issuses;
     }
     private List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads) {
@@ -169,9 +113,9 @@ public class RemoteScan extends BaseScan {
         try {
             String dnsLogAllContent = dnslog.getAllContent();
             if (dnsLogAllContent == null || dnsLogAllContent.length() <= 0) {
-                issus = new Issus(this.iRequestInfo.getUrl(),
-                        this.iRequestInfo.getMethod(),
-                        String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                        customBurpUrl.getRequestMethod(),
+                        customBurpUrl.getHttpResponseStatus(),
                         null,
                         "[-] fastjson payloads not find",
                         this.iHttpRequestResponse,
@@ -186,10 +130,9 @@ public class RemoteScan extends BaseScan {
                         if ((i + 1) != randlist.size()) {
                             continue;
                         } else {
-                            issus = new Issus(this.iRequestInfo.getUrl(),
-                                    this.iRequestInfo.getMethod(),
-                                    String.valueOf(helpers.analyzeResponse(httpRequestResponseList.get(i).getResponse()).getStatusCode()),
-                                    null,
+                            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                                    customBurpUrl.getRequestMethod(),
+                                    customBurpUrl.getHttpResponseStatus(),                                    null,
                                     "[-] fastjson payloads not find",
                                     httpRequestResponseList.get(i),
                                     Issus.State.SAVE);
@@ -198,9 +141,9 @@ public class RemoteScan extends BaseScan {
                         }
                     }
                     if (isFirst){
-                        issus = new Issus(this.iRequestInfo.getUrl(),
-                                this.iRequestInfo.getMethod(),
-                                String.valueOf(helpers.analyzeResponse(httpRequestResponseList.get(i).getResponse()).getStatusCode()),
+                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                                customBurpUrl.getRequestMethod(),
+                                customBurpUrl.getHttpResponseStatus(),
                                 payloads.get(i),
                                 "[+] fastjson payloads save2",
                                 httpRequestResponseList.get(i),
@@ -208,9 +151,9 @@ public class RemoteScan extends BaseScan {
                         issuses.add(issus);
                         isFirst = false;
                     }else {
-                        issus = new Issus(this.iRequestInfo.getUrl(),
-                                this.iRequestInfo.getMethod(),
-                                String.valueOf(helpers.analyzeResponse(httpRequestResponseList.get(i).getResponse()).getStatusCode()),
+                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                                customBurpUrl.getRequestMethod(),
+                                customBurpUrl.getHttpResponseStatus(),
                                 payloads.get(i),
                                 "[+] fastjson payloads add2",
                                 httpRequestResponseList.get(i),
@@ -221,9 +164,9 @@ public class RemoteScan extends BaseScan {
             }
             return issuses;
         } catch (Exception e) {
-            issus = new Issus(this.iRequestInfo.getUrl(),
-                    this.iRequestInfo.getMethod(),
-                    String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                    customBurpUrl.getRequestMethod(),
+                    customBurpUrl.getHttpResponseStatus(),
                     null,
                     "[-] dnslog error",
                     this.iHttpRequestResponse,

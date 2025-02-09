@@ -5,4 +5,9 @@ public interface DnslogInterface {
 
     String getAllContent();
 
+    String getExtensionName();
+
+    String getRandomDnsUrl();
+
+    String getRandomPredomain();
 }

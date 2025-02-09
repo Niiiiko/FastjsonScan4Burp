@@ -3,10 +3,13 @@ package burp.bean;
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
+import burp.IParameter;
 
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 public class CustomBurpUrl {
     private IBurpExtenderCallbacks callbacks;
@@ -85,6 +88,15 @@ public class CustomBurpUrl {
             return this.getRequestProtocol() + "://" + this.getRequestHost() + ":" + this.getRequestPort();
         }
     }
+    /**
+     * 获取-获取请求方式名称
+     *
+     * @return
+     */
+    public String getRequestMethod() {
+        String method = this.helpers.analyzeRequest(requestResponse).getMethod();
+        return method;
+    }
 
     /**
      * 获取-获取http请求url
@@ -103,4 +115,49 @@ public class CustomBurpUrl {
         }
         return null;
     }
+    /**
+     * 获取-获取请求header头
+     *
+     * @return
+     */
+    public List<String> getHttpRequestHeaders(){
+        List<String> headers = helpers.analyzeRequest(this.requestResponse).getHeaders();
+        return headers;
+    }
+    /**
+     * 获取-获取请求参数
+     *
+     * @return
+     */
+    public List<IParameter> getHttpRequestParameters() {
+        List<IParameter> parameters = helpers.analyzeRequest(requestResponse).getParameters();
+        return parameters;
+    }
+    /**
+     * 获取-获取http响应体body
+     *
+     * @return
+     */
+    public String getHttpResponseBody() {
+        byte[] response = this.requestResponse.getResponse();
+
+        int bodyOffset = helpers.analyzeResponse(response).getBodyOffset();
+        int length = response.length - bodyOffset;
+        try {
+            String body = new String(response, bodyOffset, length, "UTF-8");
+            return body;
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    /**
+     * 获取-获取http响应体状态
+     *
+     * @return
+     */
+    public String getHttpResponseStatus() {
+        return String.valueOf(helpers.analyzeResponse(this.requestResponse.getResponse()).getStatusCode());
+    }
+
+
 }

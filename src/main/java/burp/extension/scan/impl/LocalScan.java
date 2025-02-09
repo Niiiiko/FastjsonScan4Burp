@@ -1,15 +1,12 @@
-package burp.extension.impl;
+package burp.extension.scan.impl;
 
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
-import burp.IRequestInfo;
 import burp.bean.Issus;
-import burp.extension.BaseScan;
+import burp.extension.scan.BaseScan;
 import burp.utils.Customhelps;
 import burp.utils.YamlReader;
-
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,7 +34,7 @@ public class LocalScan extends BaseScan {
         String cmdHeader = this.yamlReader.getString("application.cmdEchoExtension.config.commandInputPointField");
         String randomString = new Customhelps().randomString(16);
         cmdHeader = cmdHeader + ": echo " + randomString;
-        List<String> headers = iRequestInfo.getHeaders();
+        List<String> headers = customBurpUrl.getHttpRequestHeaders();
         headers.add(cmdHeader);
         byte[] bytes = helpers.buildHttpMessage(headers, new byte[0]);
         iHttpRequestResponse = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),bytes);
@@ -53,20 +50,22 @@ public class LocalScan extends BaseScan {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            IRequestInfo response = helpers.analyzeRequest(newRequestResonse.getResponse());
-            int bodyOffset = response.getBodyOffset();
-            int bodylength = newRequestResonse.getResponse().length - bodyOffset;
+//            IRequestInfo response = helpers.analyzeRequest(newRequestResonse.getResponse());
+//            int bodyOffset = response.getBodyOffset();
+//            int bodylength = newRequestResonse.getResponse().length - bodyOffset;
+//            String responseBody = null;
+//            try {
+//                responseBody = new String(newRequestResonse.getResponse(), bodyOffset, bodylength, "UTF-8");
+//            } catch (UnsupportedEncodingException e) {
+//                throw new RuntimeException(e);
+//            }
             String responseBody = null;
-            try {
-                responseBody = new String(newRequestResonse.getResponse(), bodyOffset, bodylength, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            responseBody = customBurpUrl.getHttpResponseBody();
             if (responseBody.contains(randomString)){
                 if (flag){
-                    issus = new Issus(this.iRequestInfo.getUrl(),
-                            this.iRequestInfo.getMethod(),
-                            String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestQuery(),
+                            customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson payloads save",
                             newRequestResonse,
@@ -74,9 +73,9 @@ public class LocalScan extends BaseScan {
                     issuses.add(issus);
                     flag = false;
                 }else {
-                    issus = new Issus(this.iRequestInfo.getUrl(),
-                            this.iRequestInfo.getMethod(),
-                            String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson payloads save",
                             newRequestResonse,
@@ -86,9 +85,9 @@ public class LocalScan extends BaseScan {
             }
         }
         if (issuses.isEmpty()){
-            issus = new Issus(this.iRequestInfo.getUrl(),
-                    this.iRequestInfo.getMethod(),
-                    String.valueOf(helpers.analyzeResponse(this.iHttpRequestResponse.getResponse()).getStatusCode()),
+            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                    customBurpUrl.getRequestMethod(),
+                    customBurpUrl.getHttpResponseStatus(),
                     null,
                     "[-] fastjson payloads not find",
                     this.iHttpRequestResponse,

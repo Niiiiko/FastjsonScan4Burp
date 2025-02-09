@@ -1,6 +1,9 @@
-package burp.dnslogs;
+package burp.dnslogs.impl;
 
+import burp.IBurpExtenderCallbacks;
+import burp.dnslogs.DnslogInterface;
 import burp.utils.Customhelps;
+import burp.utils.YamlReader;
 import com.github.kevinsawicki.http.HttpRequest;
 
 /**
@@ -9,37 +12,52 @@ import com.github.kevinsawicki.http.HttpRequest;
  * @Date: 2025/1/20 16:10
  * @Description:
  */
-public class Ceye implements DnslogInterface{
+public class EyesDnslog implements DnslogInterface {
 
-    private String key;
+    private String Identifier;
     private String token;
-    private String predomain;
-    private String content;
+    private String random;
+    private String randomGroup;
     private String api;
+    private YamlReader yamlReader;
+    private String randomDnsUrl;
 
 
-    public String getPredomain() {
-        return predomain;
-    }
-
-    public Ceye(){
+    public EyesDnslog(IBurpExtenderCallbacks callbacks){
         Customhelps customhelps = new Customhelps();
-        this.api = "http://api.ceye.io";
-        this.key = "3l7rni";
-        this.predomain = customhelps.randomString(4);
-        this.token = "34207baba06e1866cae98fbcd3369d36";
+        this.yamlReader = YamlReader.getInstance(callbacks);
+        this.api = "https://eyes.sh";
+        this.Identifier = yamlReader.getString("dnsLogModule.EyesDnslog.Identifier").trim();
+        this.random = customhelps.randomString(4);
+        this.randomGroup = customhelps.randomString(4);
+        this.token = yamlReader.getString("dnsLogModule.EyesDnslog.token").trim();
+        init();
     }
-    public String getKey(){
-        return this.key;
+    private void init() {
+        if (this.token == null || this.token.length() <= 0) {
+            throw new RuntimeException(String.format("%s 扩展-token参数不能为空", this.getExtensionName()));
+        }
+        if (this.Identifier == null || this.Identifier.length() <= 0) {
+            throw new RuntimeException(String.format("%s 扩展-key参数不能为空", this.getExtensionName()));
+        }
+        String temporaryDomainName = this.random + "." + this.randomGroup + "." + this.Identifier + "." + "eyes.sh";
+        this.randomDnsUrl = temporaryDomainName;
+    }
+    @Override
+    public String getRandomDnsUrl() {
+        return this.randomDnsUrl;
+    }
+
+    @Override
+    public String getRandomPredomain() {
+        return this.random;
     }
 
     @Override
     public String getBodyContent() {
-        String url = String.format("%s/v1/records?token=%s&type=dns&filter=%s",api,token,predomain);
-//        String url = String.format("%s/v1/records?token=%s&type=dns&filter=",api,token);
-
+        String url = String.format("%s/api/group/dns/%s/%s/?token=%s",api,Identifier,randomGroup,token);
         HttpRequest httpRequest = HttpRequest.get(url);
-        String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/604.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
+        String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/614.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
         httpRequest.header("User-Agent",ua);
         httpRequest.header("Accept","*/*");
         httpRequest.trustAllCerts();
@@ -66,9 +84,7 @@ public class Ceye implements DnslogInterface{
 
     @Override
     public String getAllContent() {
-        String url = String.format("%s/v1/records?token=%s&type=dns",api,token);
-//        String url = String.format("%s/v1/records?token=%s&type=dns&filter=",api,token);
-
+        String url = String.format("%s/api/group/dns/%s/%s/?token=%s",api,Identifier,randomGroup,token);
         HttpRequest httpRequest = HttpRequest.get(url);
         String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/604.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
         httpRequest.header("User-Agent",ua);
@@ -95,9 +111,9 @@ public class Ceye implements DnslogInterface{
         return body;
     }
 
-    public static void main(String[] args) {
-        Ceye ceye = new Ceye();
-        String allContent = ceye.getAllContent();
-        System.out.println(allContent);
+    @Override
+    public String getExtensionName() {
+        return "EyesDnslog";
     }
+
 }

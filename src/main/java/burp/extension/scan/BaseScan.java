@@ -1,9 +1,11 @@
-package burp.extension;
+package burp.extension.scan;
 
 import burp.*;
+import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
 import burp.dnslogs.DnslogInterface;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,8 +27,7 @@ public abstract class BaseScan {
 
     protected IHttpRequestResponse iHttpRequestResponse;
 
-    protected IRequestInfo iRequestInfo;
-
+    protected CustomBurpUrl customBurpUrl;
     protected List<String> randomList;
 
     protected List<IHttpRequestResponse> iHttpRequestResponseList;
@@ -38,9 +39,8 @@ public abstract class BaseScan {
         this.helpers = helpers;
         this.payloads = new ArrayList<>();
         this.iHttpRequestResponse = iHttpRequestResponse;
-        this.iRequestInfo = helpers.analyzeRequest(iHttpRequestResponse);
         this.dnsLog = null;
-//        this.issuses = new ArrayList<Issus>();
+        this.customBurpUrl = new CustomBurpUrl(callbacks,iHttpRequestResponse);
         this.randomList = new ArrayList<>();
         this.iHttpRequestResponseList = new ArrayList<>();
     }
@@ -51,7 +51,7 @@ public abstract class BaseScan {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        List<String> headers = this.iRequestInfo.getHeaders();
+        List<String> headers = customBurpUrl.getHttpRequestHeaders();
         byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
         return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
     }
@@ -65,7 +65,7 @@ public abstract class BaseScan {
         }
         byte[] request = iHttpRequestResponse.getRequest();
         try {
-            List<IParameter> parameters = this.iRequestInfo.getParameters();
+            List<IParameter> parameters = customBurpUrl.getHttpRequestParameters();
             // 寻找json param位置
             for (IParameter parameter:parameters){
                 if (key.equals(parameter.getName())){
@@ -88,6 +88,6 @@ public abstract class BaseScan {
         }
         return iHttpRequestResponse;
     }
-    public abstract List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey);
+    public abstract List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException;
 
 }

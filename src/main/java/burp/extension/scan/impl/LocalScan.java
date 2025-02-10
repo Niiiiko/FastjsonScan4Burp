@@ -18,19 +18,19 @@ import java.util.List;
  * @Description:
  */
 public class LocalScan extends BaseScan {
-    private YamlReader yamlReader;
 
     public LocalScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         super(callbacks, iHttpRequestResponse, helpers);
     }
 
     @Override
-    public List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey) {
+    public List<Issus> insertPayloads(String jsonKey) {
         boolean flag = true;
         IHttpRequestResponse newRequestResonse = null;
         List<Issus> issuses = new ArrayList<>();
         Issus issus = null;
-        this.yamlReader = YamlReader.getInstance(callbacks);
+        List<String> payloads = this.yamlReader.getStringList("application.cmdEchoExtension.config.payloads");
+        Iterator<String> payloadIterator = payloads.iterator();
         String cmdHeader = this.yamlReader.getString("application.cmdEchoExtension.config.commandInputPointField");
         String randomString = new Customhelps().randomString(16);
         cmdHeader = cmdHeader + ": echo " + randomString;

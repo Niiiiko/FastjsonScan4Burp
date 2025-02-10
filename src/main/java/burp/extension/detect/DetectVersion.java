@@ -1,33 +1,33 @@
-package burp.extension.scan.impl;
+package burp.extension.detect;
 
-import burp.*;
+import burp.IBurpExtenderCallbacks;
+import burp.IExtensionHelpers;
+import burp.IHttpRequestResponse;
 import burp.bean.Issus;
 import burp.dnslogs.DnsLog;
 import burp.dnslogs.DnslogInterface;
 import burp.extension.scan.BaseScan;
+import burp.utils.Customhelps;
 import burp.utils.YamlReader;
 
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
-/**
- * @ClassName: RemoteCmd
- * @Auther: niko
- * @Date: 2025/1/20 17:25
- * @Description:
- */
-public class RemoteScan extends BaseScan {
-    public RemoteScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
-        super(callbacks,iHttpRequestResponse,helpers);
+public class DetectVersion extends BaseScan {
+
+    public DetectVersion(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
+        super(callbacks, iHttpRequestResponse, helpers);
     }
 
     @Override
     public List<Issus> insertPayloads(String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
         boolean flag = true;
         boolean havePoc = false;
-        List<String> payloads = yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
-
+        List<String> versionList = new ArrayList<>();
+        List<String> payloads = yamlReader.getStringList("application.detectVersionExtension.config.dnslogPayloads");
         Iterator<String> payloadIterator = payloads.iterator();
         Issus issus = null;
         List<Issus> issuses = new ArrayList<>();
@@ -35,14 +35,11 @@ public class RemoteScan extends BaseScan {
         YamlReader yamlReader = YamlReader.getInstance(callbacks);
         IHttpRequestResponse newRequestResonse = null;
         while (payloadIterator.hasNext()){
-//            try {
-//                Thread.sleep(1200);
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
             DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
             String dnsurl = dnslog.getRandomDnsUrl();
-            String payload = payloadIterator.next();
+            String versionPayload = payloadIterator.next();
+            String version = versionPayload.substring(0,versionPayload.indexOf(";"));
+            String payload = versionPayload.substring(versionPayload.indexOf("payload=")+8);
             if (jsonKey == null || jsonKey.length()<=0){
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
             }else {
@@ -52,7 +49,7 @@ public class RemoteScan extends BaseScan {
             randomList.add(dnslog.getRandomPredomain());
             this.iHttpRequestResponseList.add(newRequestResonse);
             this.payloads.add(payload.replace("dnslog-url",dnsurl));
-
+            versionList.add(version);
             String bodyContent = null;
             // 捕获api.ceye 503异常，避免导致issus未更新
             try {
@@ -75,19 +72,19 @@ public class RemoteScan extends BaseScan {
                             customBurpUrl.getRequestMethod(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson payloads save",
+                            "[+] fastjson " + version,
                             newRequestResonse,
                             Issus.State.SAVE);
                     issuses.add(issus);
                     flag = false;
                 }else {
-                  issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                          customBurpUrl.getRequestMethod(),
-                          customBurpUrl.getHttpResponseStatus(),
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson payloads add",
+                            "[+] fastjson " + version,
                             newRequestResonse,
-                          Issus.State.ADD);
+                            Issus.State.ADD);
                     issuses.add(issus);
                 }
                 // 第一次发现，havePoc = true
@@ -100,10 +97,10 @@ public class RemoteScan extends BaseScan {
         }
         //加入二次验证后需要在最后进行判断
         // 熬夜重点对象
-        issuses = checkoutDnslog(new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads);
+        issuses = checkoutDnslog(new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,versionList);
         return issuses;
     }
-    private List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads) {
+    private List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {
         List<Issus> issuses = new ArrayList<>();
         try {
             Thread.sleep(8000);
@@ -120,7 +117,7 @@ public class RemoteScan extends BaseScan {
                         customBurpUrl.getRequestMethod(),
                         customBurpUrl.getHttpResponseStatus(),
                         null,
-                        "[-] fastjson payloads not find",
+                        "[-] fastjson version not find",
                         this.iHttpRequestResponse,
                         Issus.State.SAVE);
                 issuses.add(issus);
@@ -136,7 +133,7 @@ public class RemoteScan extends BaseScan {
                             issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                                     customBurpUrl.getRequestMethod(),
                                     customBurpUrl.getHttpResponseStatus(),                                    null,
-                                    "[-] fastjson payloads not find",
+                                    "[-] fastjson version not find",
                                     httpRequestResponseList.get(i),
                                     Issus.State.SAVE);
                             issuses.add(issus);
@@ -148,7 +145,7 @@ public class RemoteScan extends BaseScan {
                                 customBurpUrl.getRequestMethod(),
                                 customBurpUrl.getHttpResponseStatus(),
                                 payloads.get(i),
-                                "[+] fastjson payloads save2",
+                                "[+] fastjson " + versionList.get(i),
                                 httpRequestResponseList.get(i),
                                 Issus.State.SAVE);
                         issuses.add(issus);
@@ -158,7 +155,7 @@ public class RemoteScan extends BaseScan {
                                 customBurpUrl.getRequestMethod(),
                                 customBurpUrl.getHttpResponseStatus(),
                                 payloads.get(i),
-                                "[+] fastjson payloads add2",
+                                "[+] fastjson " +versionList.get(i),
                                 httpRequestResponseList.get(i),
                                 Issus.State.ADD);
                         issuses.add(issus);

@@ -4,6 +4,7 @@ import burp.*;
 import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
 import burp.dnslogs.DnslogInterface;
+import burp.utils.YamlReader;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
@@ -33,11 +34,13 @@ public abstract class BaseScan {
     protected List<IHttpRequestResponse> iHttpRequestResponseList;
 
     protected DnslogInterface dnsLog;
+    protected YamlReader yamlReader;
 
     protected BaseScan(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         this.callbacks = callbacks;
         this.helpers = helpers;
         this.payloads = new ArrayList<>();
+        this.yamlReader = YamlReader.getInstance(callbacks);
         this.iHttpRequestResponse = iHttpRequestResponse;
         this.dnsLog = null;
         this.customBurpUrl = new CustomBurpUrl(callbacks,iHttpRequestResponse);
@@ -88,6 +91,6 @@ public abstract class BaseScan {
         }
         return iHttpRequestResponse;
     }
-    public abstract List<Issus> insertPayloads(Iterator<String> payloadIterator, String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException;
+    public abstract List<Issus> insertPayloads(String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException;
 
 }

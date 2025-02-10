@@ -2,6 +2,7 @@ package burp;
 
 import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
+import burp.extension.detect.DetectVersion;
 import burp.extension.scan.BaseScan;
 import burp.extension.scan.impl.LocalScan;
 import burp.extension.scan.impl.RemoteScan;
@@ -151,9 +152,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
         String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
         String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-        List<String> payloads = this.yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
 
-        Iterator<String> payloadIterator = payloads.iterator();
 
         String key = null;
         BaseScan remoteScan = new RemoteScan(callbacks,iHttpRequestResponse ,helpers);
@@ -183,7 +182,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return null;
         }
         // 循环调用dnslog，填入payload
-        List<Issus> tabIssues  = remoteScan.insertPayloads(payloadIterator, key);
+        List<Issus> tabIssues  = remoteScan.insertPayloads(key);
         for (Issus tabIssue:tabIssues){
             switch (tabIssue.getState()){
                 case SAVE:
@@ -221,8 +220,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
         String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
         String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-        List<String> payloads = this.yamlReader.getStringList("application.cmdEchoExtension.config.payloads");
-        Iterator<String> payloadIterator = payloads.iterator();
 
         String key = null;
         BaseScan baseScan =null;
@@ -257,7 +254,80 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return null;
         }
         // 循环调用dnslog，填入payload
-        List<Issus> tabIssues  = baseScan.insertPayloads(payloadIterator, key);
+        List<Issus> tabIssues  = baseScan.insertPayloads(key);
+        for (Issus tabIssue:tabIssues){
+            switch (tabIssue.getState()){
+                case SAVE:
+                    this.tags.getScanQueueTagClass().save(id,
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    break;
+                case ADD:
+                    this.tags.getScanQueueTagClass().add(
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    break;
+                case ERROR:
+                case TIMEOUT:
+                    break;
+            }
+        }
+        return tabIssues;
+    }
+
+    /**
+     * 探测扫描模块
+     * @param iHttpRequestResponse
+     * @return
+     */
+    private List<Issus> scan3(IHttpRequestResponse iHttpRequestResponse) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
+        FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
+        String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
+        String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
+        String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
+
+        String key = null;
+        BaseScan baseScan = null;
+        baseScan = new DetectVersion(callbacks, iHttpRequestResponse, helpers);
+
+        if (baseScan == null) {
+            return null;
+        }
+
+        int id;
+        // 判断数据包中是否存在json，有则加入到tags中
+        if (findJsons.isParamsJson().isFlag()) {
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json param.wait for testing.",
+                    iHttpRequestResponse);
+            key = findJsons.isParamsJson().getKey();
+        } else if (findJsons.isContypeJson().isFlag()) {
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json body. wait for testing.",
+                    iHttpRequestResponse);
+        } else {
+            return null;
+        }
+        // 循环调用dnslog，填入payload
+        List<Issus> tabIssues = baseScan.insertPayloads(key);
         for (Issus tabIssue:tabIssues){
             switch (tabIssue.getState()){
                 case SAVE:
@@ -441,26 +511,27 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return menuItems;
         }
         JMenuItem jMenuItem = new JMenuItem("RemoteScan");
-        jMenuItem.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,true));
+        jMenuItem.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"RemoteScan"));
         JMenuItem jMenuItem2 = new JMenuItem("LocalScan");
-        jMenuItem2.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,false));
+        jMenuItem2.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"LocalScan"));
         JMenuItem jMenuItem3 = new JMenuItem("DetectScan");
-//        jMenuItem2.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,false));
+        jMenuItem3.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"DetectScan"));
         menuItems.add(jMenuItem);
         menuItems.add(jMenuItem2);
+        menuItems.add(jMenuItem3);
         return menuItems;
     }
 
     private class ContextMenuActionListener implements ActionListener {
         IContextMenuInvocation invocation;
-        boolean flag;
-        public ContextMenuActionListener(IContextMenuInvocation invocation,boolean flag) {
+        String mode;
+        public ContextMenuActionListener(IContextMenuInvocation invocation,String mode) {
             this.invocation = invocation;
-            this.flag = flag;
+            this.mode = mode;
         }
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
-            if (flag){
+            if (mode.equals("RemoteScan")){
                 CompletableFuture.supplyAsync(() -> {
                     try {
                         scan(invocation.getSelectedMessages()[0]);
@@ -472,10 +543,22 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                     ex.printStackTrace();
                     return null;
                 });
-            }else {
+            }else if (mode.equals("LocalScan")){
                 CompletableFuture.supplyAsync(() -> {
                     try {
                         scan2(invocation.getSelectedMessages()[0]);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    return null;
+                }).exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return null;
+                });
+            } else if (mode.equals("DetectScan")) {
+                CompletableFuture.supplyAsync(() -> {
+                    try {
+                        scan3(invocation.getSelectedMessages()[0]);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

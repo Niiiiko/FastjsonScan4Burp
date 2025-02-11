@@ -1,4 +1,4 @@
-package burp.extension.detect;
+package burp.extension.scan.impl;
 
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
@@ -8,11 +8,8 @@ import burp.extension.scan.BaseScan;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
 
@@ -21,9 +18,9 @@ import java.util.regex.Pattern;
  * @Date: 2025/2/11 16:50
  * @Description: 
  */
-public class DetectLibrary extends BaseScan {
+public class libraryDetect extends BaseScan {
 
-    public DetectLibrary(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
+    public libraryDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         super(callbacks, iHttpRequestResponse, helpers);
     }
 

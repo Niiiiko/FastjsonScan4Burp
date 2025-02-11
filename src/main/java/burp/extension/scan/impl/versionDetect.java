@@ -1,4 +1,4 @@
-package burp.extension.detect;
+package burp.extension.scan.impl;
 
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DetectVersion extends BaseScan {
+public class versionDetect extends BaseScan {
 
-    public DetectVersion(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
+    public versionDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         super(callbacks, iHttpRequestResponse, helpers);
     }
 

@@ -50,15 +50,6 @@ public class LocalScan extends BaseScan {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-//            IRequestInfo response = helpers.analyzeRequest(newRequestResonse.getResponse());
-//            int bodyOffset = response.getBodyOffset();
-//            int bodylength = newRequestResonse.getResponse().length - bodyOffset;
-//            String responseBody = null;
-//            try {
-//                responseBody = new String(newRequestResonse.getResponse(), bodyOffset, bodylength, "UTF-8");
-//            } catch (UnsupportedEncodingException e) {
-//                throw new RuntimeException(e);
-//            }
             String responseBody = null;
             responseBody = customBurpUrl.getHttpResponseBody();
             if (responseBody.contains(randomString)){

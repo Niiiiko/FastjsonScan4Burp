@@ -2,6 +2,7 @@ package burp;
 
 import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
+import burp.extension.detect.DetectLibrary;
 import burp.extension.detect.DetectVersion;
 import burp.extension.scan.BaseScan;
 import burp.extension.scan.impl.LocalScan;
@@ -356,6 +357,79 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         return tabIssues;
     }
 
+    /**
+     * 探测依赖扫描模块
+     * @param iHttpRequestResponse
+     * @return
+     */
+    private List<Issus> scan4(IHttpRequestResponse iHttpRequestResponse) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
+        FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
+        String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
+        String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
+        String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
+
+        String key = null;
+        BaseScan baseScan = null;
+        baseScan = new DetectLibrary(callbacks, iHttpRequestResponse, helpers);
+
+        if (baseScan == null) {
+            return null;
+        }
+
+        int id;
+        // 判断数据包中是否存在json，有则加入到tags中
+        if (findJsons.isParamsJson().isFlag()) {
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json param.wait for testing.",
+                    iHttpRequestResponse);
+            key = findJsons.isParamsJson().getKey();
+        } else if (findJsons.isContypeJson().isFlag()) {
+            // 先添加任务
+            id = this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "find json body. wait for testing.",
+                    iHttpRequestResponse);
+        } else {
+            return null;
+        }
+        // 循环调用dnslog，填入payload
+        List<Issus> tabIssues = baseScan.insertPayloads(key);
+        for (Issus tabIssue:tabIssues){
+            switch (tabIssue.getState()){
+                case SAVE:
+                    this.tags.getScanQueueTagClass().save(id,
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    break;
+                case ADD:
+                    this.tags.getScanQueueTagClass().add(
+                            tabIssue.getPayload(),
+                            tabIssue.getMethod(),
+                            tabIssue.getUrl().toString(),
+                            tabIssue.getStatus(),
+                            tabIssue.getResult(),
+                            tabIssue.getiHttpRequestResponse());
+                    break;
+                case ERROR:
+                case TIMEOUT:
+                    break;
+            }
+        }
+        return tabIssues;
+    }
+
     @Override
     public List<IScanIssue> doActiveScan(IHttpRequestResponse iHttpRequestResponse, IScannerInsertionPoint iScannerInsertionPoint) {
         return null;
@@ -516,9 +590,12 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         jMenuItem2.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"LocalScan"));
         JMenuItem jMenuItem3 = new JMenuItem("DetectScan");
         jMenuItem3.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"DetectScan"));
+        JMenuItem jMenuItem4 = new JMenuItem("LibraryScan");
+        jMenuItem4.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"LibraryScan"));
         menuItems.add(jMenuItem);
         menuItems.add(jMenuItem2);
         menuItems.add(jMenuItem3);
+        menuItems.add(jMenuItem4);
         return menuItems;
     }
 
@@ -567,8 +644,19 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                     ex.printStackTrace();
                     return null;
                 });
+            }else if (mode.equals("LibraryScan")) {
+                CompletableFuture.supplyAsync(() -> {
+                    try {
+                        scan4(invocation.getSelectedMessages()[0]);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    return null;
+                }).exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return null;
+                });
             }
-
         }
     }
 }

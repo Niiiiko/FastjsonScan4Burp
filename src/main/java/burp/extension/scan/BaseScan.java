@@ -56,7 +56,9 @@ public abstract class BaseScan {
         }
         List<String> headers = customBurpUrl.getHttpRequestHeaders();
         byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
-        return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
+        IHttpRequestResponse newRequestResp = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
+        this.customBurpUrl = new CustomBurpUrl(callbacks,newRequestResp);
+        return newRequestResp;
     }
 
 
@@ -82,7 +84,9 @@ public abstract class BaseScan {
                         newParam = helpers.buildParameter(key, URLEncoder.encode(payloads), IParameter.PARAM_BODY);
                     }
                     request = helpers.updateParameter(request, newParam);
-                    return callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),request);
+                    IHttpRequestResponse newRequestResp = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), request);
+                    this.customBurpUrl = new CustomBurpUrl(callbacks,newRequestResp);
+                    return newRequestResp;
                 }
             }
 

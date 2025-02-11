@@ -7,14 +7,13 @@ import burp.bean.Issus;
 import burp.dnslogs.DnsLog;
 import burp.dnslogs.DnslogInterface;
 import burp.extension.scan.BaseScan;
-import burp.utils.Customhelps;
-import burp.utils.YamlReader;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DetectVersion extends BaseScan {
 
@@ -26,14 +25,67 @@ public class DetectVersion extends BaseScan {
     public List<Issus> insertPayloads(String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
         boolean flag = true;
         boolean havePoc = false;
+        int i = 0 ;
+//        先进行不出网报错判断
         List<String> versionList = new ArrayList<>();
-        List<String> payloads = yamlReader.getStringList("application.detectVersionExtension.config.dnslogPayloads");
+        List<String> payloads = yamlReader.getStringList("application.detectVersionExtension.config.regexPayloads");
         Iterator<String> payloadIterator = payloads.iterator();
         Issus issus = null;
         List<Issus> issuses = new ArrayList<>();
-        // dnslos 平台初始化
-        YamlReader yamlReader = YamlReader.getInstance(callbacks);
         IHttpRequestResponse newRequestResonse = null;
+
+        while (payloadIterator.hasNext()){
+            String versionPayload = payloadIterator.next();
+            String versionRegex = versionPayload.substring(0,versionPayload.indexOf(";")).trim();
+            String payload = versionPayload.substring(versionPayload.indexOf("payload=")+8);
+            if (jsonKey == null || jsonKey.length()<=0){
+                newRequestResonse = run(payload);
+            }else {
+                newRequestResonse = run(payload,jsonKey);
+            }
+            String bodyContent = customBurpUrl.getHttpResponseBody();
+            // 捕获api.ceye 503异常，避免导致issus未更新
+
+            if(bodyContent == null|| bodyContent.length()<=0){
+                continue;
+            }
+            Pattern pattern = Pattern.compile(versionRegex);
+            Matcher matcher = pattern.matcher(bodyContent);
+            if (matcher.find()) {
+                versionList.add(matcher.group(1));
+                // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
+                if (flag){
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            customBurpUrl.getHttpResponseStatus(),
+                            payload,
+                            "[+] fastjson version may " + versionList.get(i),
+                            newRequestResonse,
+                            Issus.State.SAVE);
+                    issuses.add(issus);
+                    flag = false;
+                }else {
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            customBurpUrl.getHttpResponseStatus(),
+                            payload,
+                            "[+] fastjson version may  " + versionList.get(i),
+                            newRequestResonse,
+                            Issus.State.ADD);
+                    issuses.add(issus);
+                }
+                // 第一次发现，havePoc = true
+                havePoc = true;
+            }
+            i ++;
+        }
+        if (havePoc){
+            return issuses;
+        }
+
+        payloads = yamlReader.getStringList("application.detectVersionExtension.config.dnslogPayloads");
+        payloadIterator = payloads.iterator();
+//        后进行dns出网报错判断
         while (payloadIterator.hasNext()){
             DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
             String dnsurl = dnslog.getRandomDnsUrl();

@@ -29,13 +29,13 @@ public class BaseSettingTag {
 
         this.input1_1(baseSetting, c);
         this.input1_2(baseSetting, c);
-
-        this.input2_1(baseSetting, c);
-        this.input2_2(baseSetting, c);
-        this.input2_3(baseSetting, c);
-        this.input2_4(baseSetting, c);
-        this.input2_5(baseSetting, c);
-        this.input2_6(baseSetting, c);
+        this.input1_3(baseSetting, c);
+//        this.input2_1(baseSetting, c);
+//        this.input2_2(baseSetting, c);
+//        this.input2_3(baseSetting, c);
+//        this.input2_4(baseSetting, c);
+//        this.input2_5(baseSetting, c);
+//        this.input2_6(baseSetting, c);
 
         this.input3_1(baseSetting, c);
         this.input3_2(baseSetting, c);
@@ -63,60 +63,69 @@ public class BaseSettingTag {
         baseSetting.add(this.isStartBox, c);
     }
 
-    private void input2_1(JPanel baseSetting, GridBagConstraints c) {
-        JLabel br_lbl_2_1 = new JLabel("扫描类型设置");
-        br_lbl_2_1.setForeground(new Color(255, 89, 18));
-        br_lbl_2_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_2_1.getFont().getSize() + 2));
-        c.insets = new Insets(15, 5, 5, 5);
+    private void input1_3(JPanel baseSetting, GridBagConstraints c) {
+        this.isStartBox = new JCheckBox("低感知被动扫描", this.yamlReader.getBoolean("isStart"));
+        this.isStartBox.setFont(new Font("Serif", Font.PLAIN, this.isStartBox.getFont().getSize()));
+        c.insets = new Insets(5, 5, 5, 5);
         c.gridx = 0;
         c.gridy = 3;
-        baseSetting.add(br_lbl_2_1, c);
+        baseSetting.add(this.isStartBox, c);
     }
 
-    private void input2_2(JPanel baseSetting, GridBagConstraints c) {
-        this.isScanGetJsonBox = new JCheckBox("扫描Get参数的Json", this.yamlReader.getBoolean("scan.type.isScanGetJson"));
-        this.isScanGetJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanGetJsonBox.getFont().getSize()));
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 4;
-        baseSetting.add(this.isScanGetJsonBox, c);
-    }
+//    private void input2_1(JPanel baseSetting, GridBagConstraints c) {
+//        JLabel br_lbl_2_1 = new JLabel("扫描类型设置");
+//        br_lbl_2_1.setForeground(new Color(255, 89, 18));
+//        br_lbl_2_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_2_1.getFont().getSize() + 2));
+//        c.insets = new Insets(15, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 3;
+//        baseSetting.add(br_lbl_2_1, c);
+//    }
 
-    private void input2_3(JPanel baseSetting, GridBagConstraints c) {
-        this.isScanPostJsonBox = new JCheckBox("扫描Post参数的Json", this.yamlReader.getBoolean("scan.type.isScanPostJson"));
-        this.isScanPostJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanPostJsonBox.getFont().getSize()));
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 5;
-        baseSetting.add(this.isScanPostJsonBox, c);
-    }
-
-    private void input2_4(JPanel baseSetting, GridBagConstraints c) {
-        this.isScanCookieJsonBox = new JCheckBox("扫描Cookie参数的Json", this.yamlReader.getBoolean("scan.type.isScanCookieJson"));
-        this.isScanCookieJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanCookieJsonBox.getFont().getSize()));
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 6;
-        baseSetting.add(this.isScanCookieJsonBox, c);
-    }
-
-    private void input2_5(JPanel baseSetting, GridBagConstraints c) {
-        this.isScanJsonBox = new JCheckBox("扫描Post请求的Json", this.yamlReader.getBoolean("scan.type.isScanJson"));
-        this.isScanJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanJsonBox.getFont().getSize()));
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 7;
-        baseSetting.add(this.isScanJsonBox, c);
-    }
-
-    private void input2_6(JPanel baseSetting, GridBagConstraints c) {
-        this.isScanBodyJsonBox = new JCheckBox("扫描HTTP请求正文的Json", this.yamlReader.getBoolean("scan.type.isScanBodyJson"));
-        this.isScanBodyJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanBodyJsonBox.getFont().getSize()));
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 8;
-        baseSetting.add(this.isScanBodyJsonBox, c);
-    }
+//    private void input2_2(JPanel baseSetting, GridBagConstraints c) {
+//        this.isScanGetJsonBox = new JCheckBox("扫描Get参数的Json", this.yamlReader.getBoolean("scan.type.isScanGetJson"));
+//        this.isScanGetJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanGetJsonBox.getFont().getSize()));
+//        c.insets = new Insets(5, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 4;
+//        baseSetting.add(this.isScanGetJsonBox, c);
+//    }
+//
+//    private void input2_3(JPanel baseSetting, GridBagConstraints c) {
+//        this.isScanPostJsonBox = new JCheckBox("扫描Post参数的Json", this.yamlReader.getBoolean("scan.type.isScanPostJson"));
+//        this.isScanPostJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanPostJsonBox.getFont().getSize()));
+//        c.insets = new Insets(5, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 5;
+//        baseSetting.add(this.isScanPostJsonBox, c);
+//    }
+//
+//    private void input2_4(JPanel baseSetting, GridBagConstraints c) {
+//        this.isScanCookieJsonBox = new JCheckBox("扫描Cookie参数的Json", this.yamlReader.getBoolean("scan.type.isScanCookieJson"));
+//        this.isScanCookieJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanCookieJsonBox.getFont().getSize()));
+//        c.insets = new Insets(5, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 6;
+//        baseSetting.add(this.isScanCookieJsonBox, c);
+//    }
+//
+//    private void input2_5(JPanel baseSetting, GridBagConstraints c) {
+//        this.isScanJsonBox = new JCheckBox("扫描Post请求的Json", this.yamlReader.getBoolean("scan.type.isScanJson"));
+//        this.isScanJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanJsonBox.getFont().getSize()));
+//        c.insets = new Insets(5, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 7;
+//        baseSetting.add(this.isScanJsonBox, c);
+//    }
+//
+//    private void input2_6(JPanel baseSetting, GridBagConstraints c) {
+//        this.isScanBodyJsonBox = new JCheckBox("扫描HTTP请求正文的Json", this.yamlReader.getBoolean("scan.type.isScanBodyJson"));
+//        this.isScanBodyJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanBodyJsonBox.getFont().getSize()));
+//        c.insets = new Insets(5, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 8;
+//        baseSetting.add(this.isScanBodyJsonBox, c);
+//    }
 
     private void input3_1(JPanel baseSetting, GridBagConstraints c) {
         JLabel br_lbl_3_1 = new JLabel("应用程序配置");

@@ -37,13 +37,15 @@ public class Issus implements IScanIssue {
     private String result;
     private IHttpRequestResponse iHttpRequestResponse;
     private State state;
+    private String extentsionMethod;
 
-    public Issus(URL url, String method, String status, String payload, String result, IHttpRequestResponse iHttpRequestResponse, State state) {
+    public Issus(URL url, String method, String extentsionMethod,String status, String payload, String result, IHttpRequestResponse iHttpRequestResponse, State state) {
         this.url = url;
         this.method = method;
         this.status = status;
         this.payload = payload;
         this.result = result;
+        this.extentsionMethod = extentsionMethod;
         this.iHttpRequestResponse = iHttpRequestResponse;
         this.state = state;
     }
@@ -57,7 +59,10 @@ public class Issus implements IScanIssue {
     }
 
 
-    public String getPayload() {
+    public String getExtentsionMethod() {
+        return extentsionMethod;
+    }
+    public String getPayload(){
         return payload;
     }
 

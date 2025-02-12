@@ -3,6 +3,7 @@ package burp.extension.scan;
 import burp.*;
 import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
+import burp.bean.ScanResultType;
 import burp.dnslogs.DnslogInterface;
 import burp.utils.YamlReader;
 
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import static burp.utils.Customhelps.tabFormat;
 
 /**
  * @ClassName: BaseScan
@@ -35,6 +38,7 @@ public abstract class BaseScan {
 
     protected DnslogInterface dnsLog;
     protected YamlReader yamlReader;
+
 
     protected BaseScan(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
         this.callbacks = callbacks;
@@ -96,5 +100,89 @@ public abstract class BaseScan {
         return iHttpRequestResponse;
     }
     public abstract List<Issus> insertPayloads(String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException;
+
+    public abstract String getExtensionName();
+    protected List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {
+
+        List<Issus> issuses = new ArrayList<>();
+        try {
+            Thread.sleep(8000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        // 开始进行二次验证
+        Issus issus;
+        try {
+            String dnsLogAllContent = dnslog.getAllContent();
+            if (dnsLogAllContent == null || dnsLogAllContent.length() <= 0) {
+                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                        customBurpUrl.getRequestMethod(),
+                        this.getExtensionName(),
+                        customBurpUrl.getHttpResponseStatus(),
+                        null,
+                        tabFormat(ScanResultType.NOT_FOUND),
+                        this.iHttpRequestResponse,
+                        Issus.State.SAVE);
+                issuses.add(issus);
+            }else {
+                // 这里进行二次判断
+                boolean isFirst = true;
+                for (int i = 0; i < randlist.size(); i++) {
+                    // dnslog 内容匹配判断
+                    if (!dnsLogAllContent.contains(randlist.get(i))) {
+                        if ((i + 1) != randlist.size()) {
+                            continue;
+                        } else {
+                            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                                    customBurpUrl.getRequestMethod(),
+                                    this.getExtensionName(),
+                                    customBurpUrl.getHttpResponseStatus(),                                    null,
+                                    tabFormat(ScanResultType.NOT_FOUND),
+                                    httpRequestResponseList.get(i),
+                                    Issus.State.SAVE);
+                            issuses.add(issus);
+                            return issuses;
+                        }
+                    }
+                    if (isFirst){
+                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                                customBurpUrl.getRequestMethod(),
+                                this.getExtensionName(),
+                                customBurpUrl.getHttpResponseStatus(),
+                                payloads.get(i),
+                                versionList.isEmpty()?tabFormat(ScanResultType.PAYLOADS_FIND):tabFormat(ScanResultType.VERSION_INFO,versionList.get(i)),
+                                httpRequestResponseList.get(i),
+                                Issus.State.SAVE);
+                        issuses.add(issus);
+                        isFirst = false;
+                    }else {
+                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                                customBurpUrl.getRequestMethod(),
+                                this.getExtensionName(),
+                                customBurpUrl.getHttpResponseStatus(),
+                                payloads.get(i),
+                                versionList.isEmpty()?tabFormat(ScanResultType.PAYLOADS_FIND):tabFormat(ScanResultType.VERSION_INFO,versionList.get(i)),
+                                httpRequestResponseList.get(i),
+                                Issus.State.ADD);
+                        issuses.add(issus);
+                    }
+                }
+            }
+            return issuses;
+        } catch (Exception e) {
+            // 抛出dnslog平台error
+            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                    customBurpUrl.getRequestMethod(),
+                    this.getExtensionName(),
+                    customBurpUrl.getHttpResponseStatus(),
+                    null,
+                    tabFormat(ScanResultType.DNS_ERROR),
+                    this.iHttpRequestResponse,
+                    Issus.State.SAVE);
+            issuses.add(issus);
+            return issuses;
+        }
+    }
 
 }

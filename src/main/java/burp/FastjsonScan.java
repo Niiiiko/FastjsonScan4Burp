@@ -4,9 +4,6 @@ import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
 import burp.extension.ScanFactory;
 import burp.extension.scan.BaseScan;
-import burp.extension.scan.impl.LocalScan;
-import burp.extension.scan.impl.RemoteScan;
-import burp.extension.scan.impl.versionDetect;
 import burp.ui.Tags;
 import burp.utils.FindJsons;
 import burp.utils.YamlReader;
@@ -61,6 +58,10 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse iHttpRequestResponse) {
+        // 判断是否开启插件
+        if (!this.tags.getBaseSettingTagClass().isStart()) {
+            return null;
+        }
         List<IScanIssue> issues = new ArrayList<>();
 
         List<String> domainNameBlacklist = this.yamlReader.getStringList("scan.domainName.blacklist");
@@ -143,220 +144,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         }
         return issues;
     }
-
-    /**
-     * 出网模块扫描
-     * @return List<Issus>
-     */
-//    private List<Issus> scan(IHttpRequestResponse iHttpRequestResponse) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
-//        FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
-//        String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
-//        String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
-//        String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-//
-//
-//        String key = null;
-//        BaseScan remoteScan = new RemoteScan(callbacks,iHttpRequestResponse ,helpers);
-//
-//        int id;
-//        // 判断数据包中是否存在json，有则加入到tags中
-//        if (findJsons.isParamsJson().isFlag()){
-//            // 先添加任务
-//            id = this.tags.getScanQueueTagClass().add(
-//                    method,
-//                    method,
-//                    url,
-//                    statusCode,
-//                    "find json param.wait for testing.",
-//                    iHttpRequestResponse);
-//            key = findJsons.isParamsJson().getKey();
-//        }else if (findJsons.isContypeJson().isFlag()){
-//            // 先添加任务
-//            id = this.tags.getScanQueueTagClass().add(
-//                    method,
-//                    method,
-//                    url,
-//                    statusCode,
-//                    "find json body. wait for testing.",
-//                    iHttpRequestResponse);
-//        }else {
-//            return null;
-//        }
-//        // 循环调用dnslog，填入payload
-//        List<Issus> tabIssues  = remoteScan.insertPayloads(key);
-//        for (Issus tabIssue:tabIssues){
-//            switch (tabIssue.getState()){
-//                case SAVE:
-//                    this.tags.getScanQueueTagClass().save(id,
-//                            tabIssue.getPayload(),
-//                            tabIssue.getMethod(),
-//                            tabIssue.getUrl().toString(),
-//                            tabIssue.getStatus(),
-//                            tabIssue.getResult(),
-//                            tabIssue.getiHttpRequestResponse());
-//                    break;
-//                case ADD:
-//                    this.tags.getScanQueueTagClass().add(
-//                            tabIssue.getPayload(),
-//                            tabIssue.getMethod(),
-//                            tabIssue.getUrl().toString(),
-//                            tabIssue.getStatus(),
-//                            tabIssue.getResult(),
-//                            tabIssue.getiHttpRequestResponse());
-//                    break;
-//                case ERROR:
-//                case TIMEOUT:
-//                    break;
-//            }
-//        }
-//        return tabIssues;
-//    }
-
-    /**
-     * 不出网模块扫描
-     * @return List<Issus>
-     */
-//    private List<Issus> scan2(IHttpRequestResponse iHttpRequestResponse) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
-//        FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
-//        String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
-//        String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
-//        String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-//
-//        String key = null;
-//        BaseScan baseScan =null;
-//        baseScan = new LocalScan(callbacks,iHttpRequestResponse ,helpers);
-//
-//        if (baseScan == null){
-//            return null;
-//        }
-//
-//        int id;
-//        // 判断数据包中是否存在json，有则加入到tags中
-//        if (findJsons.isParamsJson().isFlag()){
-//            // 先添加任务
-//            id = this.tags.getScanQueueTagClass().add(
-//                    method,
-//                    method,
-//                    url,
-//                    statusCode,
-//                    "find json param.wait for testing.",
-//                    iHttpRequestResponse);
-//            key = findJsons.isParamsJson().getKey();
-//        }else if (findJsons.isContypeJson().isFlag()){
-//            // 先添加任务
-//            id = this.tags.getScanQueueTagClass().add(
-//                    method,
-//                    method,
-//                    url,
-//                    statusCode,
-//                    "find json body. wait for testing.",
-//                    iHttpRequestResponse);
-//        }else {
-//            return null;
-//        }
-//        // 循环调用dnslog，填入payload
-//        List<Issus> tabIssues  = baseScan.insertPayloads(key);
-//        for (Issus tabIssue:tabIssues){
-//            switch (tabIssue.getState()){
-//                case SAVE:
-//                    this.tags.getScanQueueTagClass().save(id,
-//                            tabIssue.getPayload(),
-//                            tabIssue.getMethod(),
-//                            tabIssue.getUrl().toString(),
-//                            tabIssue.getStatus(),
-//                            tabIssue.getResult(),
-//                            tabIssue.getiHttpRequestResponse());
-//                    break;
-//                case ADD:
-//                    this.tags.getScanQueueTagClass().add(
-//                            tabIssue.getPayload(),
-//                            tabIssue.getMethod(),
-//                            tabIssue.getUrl().toString(),
-//                            tabIssue.getStatus(),
-//                            tabIssue.getResult(),
-//                            tabIssue.getiHttpRequestResponse());
-//                    break;
-//                case ERROR:
-//                case TIMEOUT:
-//                    break;
-//            }
-//        }
-//        return tabIssues;
-//    }
-
-    /**
-     * 探测扫描模块
-     * @param iHttpRequestResponse
-     * @return
-     */
-//    private List<Issus> scan3(IHttpRequestResponse iHttpRequestResponse) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
-//        FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
-//        String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
-//        String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
-//        String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-//
-//        String key = null;
-//        BaseScan baseScan = null;
-//        baseScan = new versionDetect(callbacks, iHttpRequestResponse, helpers);
-//
-//        if (baseScan == null) {
-//            return null;
-//        }
-//
-//        int id;
-//        // 判断数据包中是否存在json，有则加入到tags中
-//        if (findJsons.isParamsJson().isFlag()) {
-//            // 先添加任务
-//            id = this.tags.getScanQueueTagClass().add(
-//                    method,
-//                    method,
-//                    url,
-//                    statusCode,
-//                    "find json param.wait for testing.",
-//                    iHttpRequestResponse);
-//            key = findJsons.isParamsJson().getKey();
-//        } else if (findJsons.isContypeJson().isFlag()) {
-//            // 先添加任务
-//            id = this.tags.getScanQueueTagClass().add(
-//                    method,
-//                    method,
-//                    url,
-//                    statusCode,
-//                    "find json body. wait for testing.",
-//                    iHttpRequestResponse);
-//        } else {
-//            return null;
-//        }
-//        // 循环调用dnslog，填入payload
-//        List<Issus> tabIssues = baseScan.insertPayloads(key);
-//        for (Issus tabIssue:tabIssues){
-//            switch (tabIssue.getState()){
-//                case SAVE:
-//                    this.tags.getScanQueueTagClass().save(id,
-//                            tabIssue.getPayload(),
-//                            tabIssue.getMethod(),
-//                            tabIssue.getUrl().toString(),
-//                            tabIssue.getStatus(),
-//                            tabIssue.getResult(),
-//                            tabIssue.getiHttpRequestResponse());
-//                    break;
-//                case ADD:
-//                    this.tags.getScanQueueTagClass().add(
-//                            tabIssue.getPayload(),
-//                            tabIssue.getMethod(),
-//                            tabIssue.getUrl().toString(),
-//                            tabIssue.getStatus(),
-//                            tabIssue.getResult(),
-//                            tabIssue.getiHttpRequestResponse());
-//                    break;
-//                case ERROR:
-//                case TIMEOUT:
-//                    break;
-//            }
-//        }
-//        return tabIssues;
-//    }
-
     /**
      * 探测依赖扫描模块
      *
@@ -408,7 +195,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             switch (tabIssue.getState()){
                 case SAVE:
                     this.tags.getScanQueueTagClass().save(id,
-                            tabIssue.getPayload(),
+                            tabIssue.getExtentsionMethod(),
                             tabIssue.getMethod(),
                             tabIssue.getUrl().toString(),
                             tabIssue.getStatus(),
@@ -417,7 +204,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                     break;
                 case ADD:
                     this.tags.getScanQueueTagClass().add(
-                            tabIssue.getPayload(),
+                            tabIssue.getExtentsionMethod(),
                             tabIssue.getMethod(),
                             tabIssue.getUrl().toString(),
                             tabIssue.getStatus(),

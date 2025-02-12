@@ -4,12 +4,15 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.bean.Issus;
+import burp.bean.ScanResultType;
 import burp.extension.scan.BaseScan;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static burp.utils.Customhelps.tabFormat;
 
 /**
 
@@ -53,19 +56,21 @@ public class libraryDetect extends BaseScan {
                 if (flag){
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                             customBurpUrl.getRequestMethod(),
+                            getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson have library: " + library,
+                            tabFormat(ScanResultType.LIBRARY_FOUND,library),
                             newRequestResonse,
                             Issus.State.SAVE);
                     issuses.add(issus);
                     flag = false;
                 }else {
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            getExtensionName(),
                             customBurpUrl.getRequestMethod(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson have library: " + library,
+                            tabFormat(ScanResultType.LIBRARY_FOUND,library),
                             newRequestResonse,
                             Issus.State.ADD);
                     issuses.add(issus);
@@ -73,5 +78,10 @@ public class libraryDetect extends BaseScan {
             }
         }
         return issuses;
+    }
+
+    @Override
+    public String getExtensionName() {
+        return "libraryDetect";
     }
 }

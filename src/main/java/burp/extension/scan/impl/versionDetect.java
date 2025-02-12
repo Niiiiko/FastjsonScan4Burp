@@ -57,6 +57,7 @@ public class versionDetect extends BaseScan {
                 if (flag){
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                             customBurpUrl.getRequestMethod(),
+                            getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson version may " + versionList.get(i),
@@ -67,6 +68,7 @@ public class versionDetect extends BaseScan {
                 }else {
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                             customBurpUrl.getRequestMethod(),
+                            getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson version may  " + versionList.get(i),
@@ -85,7 +87,7 @@ public class versionDetect extends BaseScan {
 
         payloads = yamlReader.getStringList("application.detectVersionExtension.config.dnslogPayloads");
         payloadIterator = payloads.iterator();
-//        后进行dns出网报错判断
+
         while (payloadIterator.hasNext()){
             DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
             String dnsurl = dnslog.getRandomDnsUrl();
@@ -122,6 +124,7 @@ public class versionDetect extends BaseScan {
                 if (flag){
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                             customBurpUrl.getRequestMethod(),
+                            getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson " + version,
@@ -132,6 +135,7 @@ public class versionDetect extends BaseScan {
                 }else {
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                             customBurpUrl.getRequestMethod(),
+                            getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
                             "[+] fastjson " + version,
@@ -148,83 +152,87 @@ public class versionDetect extends BaseScan {
             return issuses;
         }
         //加入二次验证后需要在最后进行判断
-        // 熬夜重点对象
         issuses = checkoutDnslog(new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,versionList);
         return issuses;
     }
-    private List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {
-        List<Issus> issuses = new ArrayList<>();
-        try {
-            Thread.sleep(8000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
 
-        // 开始进行二次验证
-        Issus issus;
-        try {
-            String dnsLogAllContent = dnslog.getAllContent();
-            if (dnsLogAllContent == null || dnsLogAllContent.length() <= 0) {
-                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                        customBurpUrl.getRequestMethod(),
-                        customBurpUrl.getHttpResponseStatus(),
-                        null,
-                        "[-] fastjson version not find",
-                        this.iHttpRequestResponse,
-                        Issus.State.SAVE);
-                issuses.add(issus);
-            }else {
-                // 这里进行二次判断
-                boolean isFirst = true;
-                for (int i = 0; i < randlist.size(); i++) {
-                    // dnslog 内容匹配判断
-                    if (!dnsLogAllContent.contains(randlist.get(i))) {
-                        if ((i + 1) != randlist.size()) {
-                            continue;
-                        } else {
-                            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                                    customBurpUrl.getRequestMethod(),
-                                    customBurpUrl.getHttpResponseStatus(),                                    null,
-                                    "[-] fastjson version not find",
-                                    httpRequestResponseList.get(i),
-                                    Issus.State.SAVE);
-                            issuses.add(issus);
-                            return issuses;
-                        }
-                    }
-                    if (isFirst){
-                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                                customBurpUrl.getRequestMethod(),
-                                customBurpUrl.getHttpResponseStatus(),
-                                payloads.get(i),
-                                "[+] fastjson " + versionList.get(i),
-                                httpRequestResponseList.get(i),
-                                Issus.State.SAVE);
-                        issuses.add(issus);
-                        isFirst = false;
-                    }else {
-                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                                customBurpUrl.getRequestMethod(),
-                                customBurpUrl.getHttpResponseStatus(),
-                                payloads.get(i),
-                                "[+] fastjson " +versionList.get(i),
-                                httpRequestResponseList.get(i),
-                                Issus.State.ADD);
-                        issuses.add(issus);
-                    }
-                }
-            }
-            return issuses;
-        } catch (Exception e) {
-            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                    customBurpUrl.getRequestMethod(),
-                    customBurpUrl.getHttpResponseStatus(),
-                    null,
-                    "[-] dnslog error",
-                    this.iHttpRequestResponse,
-                    Issus.State.SAVE);
-            issuses.add(issus);
-            return issuses;
-        }
+    @Override
+    public String getExtensionName() {
+        return "versionDetect";
     }
+//    private List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {
+//        List<Issus> issuses = new ArrayList<>();
+//        try {
+//            Thread.sleep(8000);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        // 开始进行二次验证
+//        Issus issus;
+//        try {
+//            String dnsLogAllContent = dnslog.getAllContent();
+//            if (dnsLogAllContent == null || dnsLogAllContent.length() <= 0) {
+//                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+//                        customBurpUrl.getRequestMethod(),
+//                        customBurpUrl.getHttpResponseStatus(),
+//                        null,
+//                        "[-] fastjson version not find",
+//                        this.iHttpRequestResponse,
+//                        Issus.State.SAVE);
+//                issuses.add(issus);
+//            }else {
+//                // 这里进行二次判断
+//                boolean isFirst = true;
+//                for (int i = 0; i < randlist.size(); i++) {
+//                    // dnslog 内容匹配判断
+//                    if (!dnsLogAllContent.contains(randlist.get(i))) {
+//                        if ((i + 1) != randlist.size()) {
+//                            continue;
+//                        } else {
+//                            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+//                                    customBurpUrl.getRequestMethod(),
+//                                    customBurpUrl.getHttpResponseStatus(),                                    null,
+//                                    "[-] fastjson version not find",
+//                                    httpRequestResponseList.get(i),
+//                                    Issus.State.SAVE);
+//                            issuses.add(issus);
+//                            return issuses;
+//                        }
+//                    }
+//                    if (isFirst){
+//                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+//                                customBurpUrl.getRequestMethod(),
+//                                customBurpUrl.getHttpResponseStatus(),
+//                                payloads.get(i),
+//                                "[+] fastjson " + versionList.get(i),
+//                                httpRequestResponseList.get(i),
+//                                Issus.State.SAVE);
+//                        issuses.add(issus);
+//                        isFirst = false;
+//                    }else {
+//                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+//                                customBurpUrl.getRequestMethod(),
+//                                customBurpUrl.getHttpResponseStatus(),
+//                                payloads.get(i),
+//                                "[+] fastjson " +versionList.get(i),
+//                                httpRequestResponseList.get(i),
+//                                Issus.State.ADD);
+//                        issuses.add(issus);
+//                    }
+//                }
+//            }
+//            return issuses;
+//        } catch (Exception e) {
+//            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+//                    customBurpUrl.getRequestMethod(),
+//                    customBurpUrl.getHttpResponseStatus(),
+//                    null,
+//                    "[-] dnslog error",
+//                    this.iHttpRequestResponse,
+//                    Issus.State.SAVE);
+//            issuses.add(issus);
+//            return issuses;
+//        }
+//    }
 }

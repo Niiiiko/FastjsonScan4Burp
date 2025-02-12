@@ -1,6 +1,7 @@
 package burp.utils;
 
 import burp.IBurpExtenderCallbacks;
+import burp.bean.ScanResultType;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -21,10 +22,6 @@ public class Customhelps {
     private IBurpExtenderCallbacks callbacks;
     private static Map<String, Map<String, Object>> properties = new HashMap<>();
 
-    public Customhelps(IBurpExtenderCallbacks callbacks) {
-        this.callbacks = callbacks;
-    }
-
     public Customhelps() {
     }
 
@@ -39,27 +36,6 @@ public class Customhelps {
         return result.toString();
     }
 
-    public Object getValueByKey(String key) {
-        String separator = ".";
-        String[] separatorKeys = null;
-        if (key.contains(separator)) {
-            separatorKeys = key.split("\\.");
-        } else {
-            return properties.get(key);
-        }
-        Map<String, Map<String, Object>> finalValue = new HashMap<>();
-        for (int i = 0; i < separatorKeys.length - 1; i++) {
-            if (i == 0) {
-                finalValue = (Map) properties.get(separatorKeys[i]);
-                continue;
-            }
-            if (finalValue == null) {
-                break;
-            }
-            finalValue = (Map) finalValue.get(separatorKeys[i]);
-        }
-        return finalValue == null ? null : finalValue.get(separatorKeys[separatorKeys.length - 1]);
-    }
 
     public String getConfigPath(){
         int lastIndexOf = this.callbacks.getExtensionFilename().lastIndexOf(File.separator);
@@ -118,5 +94,7 @@ public class Customhelps {
 
         return null;
     }
-
+    public static String tabFormat(ScanResultType type, Object... args){
+        return type.format(args);
+    }
 }

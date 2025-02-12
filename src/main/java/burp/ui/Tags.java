@@ -5,14 +5,13 @@ import javax.swing.JTabbedPane;
 
 import burp.ITab;
 import burp.IBurpExtenderCallbacks;
+import burp.utils.YamlReader;
 
 
 public class Tags implements ITab {
     private final JTabbedPane tabs;
-
+    private BaseSettingTag baseSettingTag;
     private String tagName;
-
-//    private BaseSettingTag baseSettingTag;
     private ScanQueueTag scanQueueTag;
 
     public Tags(IBurpExtenderCallbacks callbacks, String name) {
@@ -20,15 +19,15 @@ public class Tags implements ITab {
 
         tabs = new JTabbedPane();
 
-//        YamlReader yamlReader = YamlReader.getInstance(callbacks);
+        YamlReader yamlReader = YamlReader.getInstance(callbacks);
 
         // 扫描队列-窗口
         ScanQueueTag scanQueueTag = new ScanQueueTag(callbacks, tabs);
         this.scanQueueTag = scanQueueTag;
 
-//        // 基本设置-窗口
-//        BaseSettingTag baseSettingTag = new BaseSettingTag(callbacks, tabs, yamlReader);
-//        this.baseSettingTag = baseSettingTag;
+        // 基本设置-窗口
+        BaseSettingTag baseSettingTag = new BaseSettingTag(callbacks, tabs, yamlReader);
+        this.baseSettingTag = baseSettingTag;
 
         // 自定义组件-导入
         callbacks.customizeUiComponent(tabs);
@@ -64,5 +63,13 @@ public class Tags implements ITab {
     @Override
     public Component getUiComponent() {
         return this.tabs;
+    }
+    /**
+     * 基础设置tag
+     *
+     * @return
+     */
+    public BaseSettingTag getBaseSettingTagClass() {
+        return this.baseSettingTag;
     }
 }

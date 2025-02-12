@@ -4,12 +4,15 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.bean.Issus;
+import burp.bean.ScanResultType;
 import burp.extension.scan.BaseScan;
 import burp.utils.Customhelps;
 import burp.utils.YamlReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static burp.utils.Customhelps.tabFormat;
 
 /**
  * @ClassName: LocalScan
@@ -55,10 +58,11 @@ public class LocalScan extends BaseScan {
             if (responseBody.contains(randomString)){
                 if (flag){
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                            customBurpUrl.getRequestQuery(),
+                            customBurpUrl.getRequestMethod(),
+                            getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson payloads save",
+                            tabFormat(ScanResultType.PAYLOADS_FIND),
                             newRequestResonse,
                             Issus.State.SAVE);
                     issuses.add(issus);
@@ -66,9 +70,10 @@ public class LocalScan extends BaseScan {
                 }else {
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                             customBurpUrl.getRequestMethod(),
+                            getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson payloads save",
+                            tabFormat(ScanResultType.PAYLOADS_FIND),
                             newRequestResonse,
                             Issus.State.ADD);
                     issuses.add(issus);
@@ -78,13 +83,19 @@ public class LocalScan extends BaseScan {
         if (issuses.isEmpty()){
             issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                     customBurpUrl.getRequestMethod(),
+                    getExtensionName(),
                     customBurpUrl.getHttpResponseStatus(),
                     null,
-                    "[-] fastjson payloads not find",
+                    tabFormat(ScanResultType.NOT_FOUND),
                     this.iHttpRequestResponse,
                     Issus.State.SAVE);
             issuses.add(issus);
         }
         return issuses;
+    }
+
+    @Override
+    public String getExtensionName() {
+        return "LocalScan";
     }
 }

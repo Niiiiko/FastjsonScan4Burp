@@ -121,6 +121,22 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         }
         // todo 避免迭代器为空报错
         List<Issus> tabIssues = null;
+        // 判断是否开启低感知插件
+        if (this.tags.getBaseSettingTagClass().isStartLowPercept()) {
+            try {
+                tabIssues = scan(iHttpRequestResponse,"lowPerceptScan");
+            } catch (Exception e){
+                throw new RuntimeException(e);
+            }
+            if (tabIssues != null){
+                for (Issus tabIssue:tabIssues){
+                    if (tabIssue.getPayload() !=null)
+                        issues.add(tabIssue);
+                }
+            }
+            return issues;
+        }
+        // 正常扫描逻辑
         try {
             tabIssues = scan(iHttpRequestResponse,"RemoteScan");
         } catch (Exception e) {
@@ -187,6 +203,13 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                     "find json body. wait for testing.",
                     iHttpRequestResponse);
         } else {
+            this.tags.getScanQueueTagClass().add(
+                    method,
+                    method,
+                    url,
+                    statusCode,
+                    "[×] json not find",
+                    iHttpRequestResponse);
             return null;
         }
         // 循环调用dnslog，填入payload
@@ -381,10 +404,13 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         jMenuItem3.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"versionDetect"));
         JMenuItem jMenuItem4 = new JMenuItem("LibraryScan");
         jMenuItem4.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"libraryDetect"));
+        JMenuItem jMenuItem5 = new JMenuItem("LowPerceptScan");
+        jMenuItem5.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"lowPerceptScan"));
         menuItems.add(jMenuItem);
         menuItems.add(jMenuItem2);
         menuItems.add(jMenuItem3);
         menuItems.add(jMenuItem4);
+        menuItems.add(jMenuItem5);
         return menuItems;
     }
 
@@ -406,55 +432,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                     callbacks.printError("Scan error: " + ex.toString());
                 }
             });
-//            if (mode.equals("RemoteScan")){
-//                CompletableFuture.supplyAsync(() -> {
-//                    try {
-//                        scan(invocation.getSelectedMessages()[0]);
-//                    } catch (Exception e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                    return null;
-//                }).exceptionally(ex -> {
-//                    ex.printStackTrace();
-//                    return null;
-//                });
-//            }else if (mode.equals("LocalScan")){
-//                CompletableFuture.supplyAsync(() -> {
-//                    try {
-//                        scan2(invocation.getSelectedMessages()[0]);
-//                    } catch (Exception e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                    return null;
-//                }).exceptionally(ex -> {
-//                    ex.printStackTrace();
-//                    return null;
-//                });
-//            } else if (mode.equals("DetectScan")) {
-//                CompletableFuture.supplyAsync(() -> {
-//                    try {
-//                        scan3(invocation.getSelectedMessages()[0]);
-//                    } catch (Exception e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                    return null;
-//                }).exceptionally(ex -> {
-//                    ex.printStackTrace();
-//                    return null;
-//                });
-//            }else if (mode.equals("LibraryScan")) {
-//                // 异步执行扫描
-//                CompletableFuture.runAsync(() -> {
-//                    try {
-//                        scan4(invocation.getSelectedMessages()[0]);
-//
-//                    } catch (Exception ex) {
-//                        // 在Burp的报警窗口显示错误
-//                        callbacks.issueAlert("Scan failed: " + ex.getMessage());
-//                        callbacks.printError("Scan error: " + ex.toString());
-//                    }
-//                });
-//            }
         }
     }
 }

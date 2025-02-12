@@ -133,6 +133,21 @@ public class CustomBurpUrl {
         List<IParameter> parameters = helpers.analyzeRequest(requestResponse).getParameters();
         return parameters;
     }
+
+    /**
+     * 获取- 请求体body
+     *
+     * @return
+     */
+    public String getHttpRequestBody(){
+        int bodyOffset = helpers.analyzeRequest(requestResponse.getRequest()).getBodyOffset();
+        int length = requestResponse.getRequest().length - bodyOffset;
+        try {
+            return new String(requestResponse.getRequest(),bodyOffset,length,"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
     /**
      * 获取-获取http响应体body
      *

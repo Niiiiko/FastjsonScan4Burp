@@ -102,15 +102,20 @@ public abstract class BaseScan {
     public abstract List<Issus> insertPayloads(String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException;
 
     public abstract String getExtensionName();
-    protected List<Issus> checkoutDnslog(DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {
+    protected List<Issus> checkoutDnslog(String extendName,DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {
 
         List<Issus> issuses = new ArrayList<>();
+        String tabResult = null ;
         try {
             Thread.sleep(8000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
+        if (extendName.equals("lowPerceptScan")){
+            tabResult = tabFormat(ScanResultType.IS_FASTJSON);
+        } else if (extendName.equals("RemoteScan")) {
+            tabResult = tabFormat(ScanResultType.PAYLOADS_FIND);
+        }
         // 开始进行二次验证
         Issus issus;
         try {
@@ -137,7 +142,8 @@ public abstract class BaseScan {
                             issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                                     customBurpUrl.getRequestMethod(),
                                     this.getExtensionName(),
-                                    customBurpUrl.getHttpResponseStatus(),                                    null,
+                                    customBurpUrl.getHttpResponseStatus(),
+                                    null,
                                     tabFormat(ScanResultType.NOT_FOUND),
                                     httpRequestResponseList.get(i),
                                     Issus.State.SAVE);
@@ -145,13 +151,15 @@ public abstract class BaseScan {
                             return issuses;
                         }
                     }
+                    if (extendName.equals("versionDetect")){
+                        tabResult = tabFormat(ScanResultType.VERSION_INFO,versionList.get(i));}
                     if (isFirst){
                         issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                                 customBurpUrl.getRequestMethod(),
                                 this.getExtensionName(),
                                 customBurpUrl.getHttpResponseStatus(),
                                 payloads.get(i),
-                                versionList.isEmpty()?tabFormat(ScanResultType.PAYLOADS_FIND):tabFormat(ScanResultType.VERSION_INFO,versionList.get(i)),
+                                tabResult,
                                 httpRequestResponseList.get(i),
                                 Issus.State.SAVE);
                         issuses.add(issus);
@@ -162,7 +170,7 @@ public abstract class BaseScan {
                                 this.getExtensionName(),
                                 customBurpUrl.getHttpResponseStatus(),
                                 payloads.get(i),
-                                versionList.isEmpty()?tabFormat(ScanResultType.PAYLOADS_FIND):tabFormat(ScanResultType.VERSION_INFO,versionList.get(i)),
+                                tabResult,
                                 httpRequestResponseList.get(i),
                                 Issus.State.ADD);
                         issuses.add(issus);

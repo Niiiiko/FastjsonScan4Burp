@@ -2,6 +2,9 @@ package burp.bean;
 
 public enum ScanResultType {
     PAYLOADS_FIND("[+] Payload find out"),
+    MAY_FASTJSON("[+] Maybe use fastjson"),
+    IS_FASTJSON("[+] Fastjson with Network"),
+    NO_FASTJSON("[+] Maybe no fastjson"),
     VERSION_INFO("[+] version: %s"),
     LIBRARY_FOUND("[+] library: %s"),
     NOT_FOUND("[-] Payload not find"),

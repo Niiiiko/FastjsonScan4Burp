@@ -4,6 +4,7 @@ import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.bean.Issus;
+import burp.bean.ScanResultType;
 import burp.dnslogs.DnsLog;
 import burp.dnslogs.DnslogInterface;
 import burp.extension.scan.BaseScan;
@@ -14,6 +15,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static burp.utils.Customhelps.tabFormat;
 
 public class versionDetect extends BaseScan {
 
@@ -127,7 +130,7 @@ public class versionDetect extends BaseScan {
                             getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson " + version,
+                            tabFormat(ScanResultType.VERSION_INFO,version),
                             newRequestResonse,
                             Issus.State.SAVE);
                     issuses.add(issus);
@@ -138,7 +141,7 @@ public class versionDetect extends BaseScan {
                             getExtensionName(),
                             customBurpUrl.getHttpResponseStatus(),
                             payload,
-                            "[+] fastjson " + version,
+                            tabFormat(ScanResultType.VERSION_INFO,version),
                             newRequestResonse,
                             Issus.State.ADD);
                     issuses.add(issus);
@@ -152,7 +155,7 @@ public class versionDetect extends BaseScan {
             return issuses;
         }
         //加入二次验证后需要在最后进行判断
-        issuses = checkoutDnslog(new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,versionList);
+        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,versionList);
         return issuses;
     }
 

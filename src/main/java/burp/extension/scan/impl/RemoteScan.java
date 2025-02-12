@@ -99,7 +99,7 @@ public class RemoteScan extends BaseScan {
             return issuses;
         }
         //加入二次验证后需要在最后进行判断
-        issuses = checkoutDnslog(new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,null);
+        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,null);
         return issuses;
     }
 

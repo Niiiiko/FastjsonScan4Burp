@@ -12,6 +12,7 @@ public class BaseSettingTag {
     private YamlReader yamlReader;
 
     private JCheckBox isStartBox;
+    private JCheckBox isStartLowPercept;
 
     private JCheckBox isScanGetJsonBox;
     private JCheckBox isScanPostJsonBox;
@@ -64,12 +65,12 @@ public class BaseSettingTag {
     }
 
     private void input1_3(JPanel baseSetting, GridBagConstraints c) {
-        this.isStartBox = new JCheckBox("低感知被动扫描", this.yamlReader.getBoolean("isStart"));
-        this.isStartBox.setFont(new Font("Serif", Font.PLAIN, this.isStartBox.getFont().getSize()));
+        this.isStartLowPercept = new JCheckBox("低感知被动扫描", this.yamlReader.getBoolean("application.lowPerceptionScan.config.isStart"));
+        this.isStartLowPercept.setFont(new Font("Serif", Font.PLAIN, this.isStartBox.getFont().getSize()));
         c.insets = new Insets(5, 5, 5, 5);
         c.gridx = 0;
         c.gridy = 3;
-        baseSetting.add(this.isStartBox, c);
+        baseSetting.add(this.isStartLowPercept, c);
     }
 
 //    private void input2_1(JPanel baseSetting, GridBagConstraints c) {
@@ -159,40 +160,9 @@ public class BaseSettingTag {
         return this.isStartBox.isSelected();
     }
 
-    /**
-     * 获取允许运行插入点类型列表
-     * 0 = GET, 1 = POST, 2 = COOKIE, 6 = JSON, 36 = BODY
-     *
-     * @return
-     */
-    public List<Integer> getScanTypeList() {
-        List<Integer> typeList = new ArrayList<>();
 
-        if (this.isScanGetJsonBox.isSelected()) {
-            typeList.add(0);
-        }
-
-        if (this.isScanPostJsonBox.isSelected()) {
-            typeList.add(1);
-        }
-
-        if (this.isScanCookieJsonBox.isSelected()) {
-            typeList.add(2);
-        }
-
-        if (this.isScanJsonBox.isSelected()) {
-            typeList.add(6);
-        }
-
-        if (this.isScanBodyJsonBox.isSelected()) {
-            typeList.add(36);
-        }
-
-        return typeList;
-    }
-
-    public Boolean isScanJson() {
-        return this.isScanJsonBox.isSelected();
+    public Boolean isStartLowPercept() {
+        return this.isStartLowPercept.isSelected();
     }
 
     public Boolean isStartCmdEchoExtension() {

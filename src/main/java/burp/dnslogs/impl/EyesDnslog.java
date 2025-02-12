@@ -29,7 +29,7 @@ public class EyesDnslog implements DnslogInterface {
         this.api = "https://eyes.sh";
         this.Identifier = yamlReader.getString("dnsLogModule.EyesDnslog.Identifier").trim();
         this.random = customhelps.randomString(4);
-        this.randomGroup = customhelps.randomString(4);
+        this.randomGroup = "n1ngoax";
         this.token = yamlReader.getString("dnsLogModule.EyesDnslog.token").trim();
         init();
     }

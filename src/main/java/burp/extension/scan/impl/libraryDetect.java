@@ -23,8 +23,8 @@ import static burp.utils.Customhelps.tabFormat;
  */
 public class libraryDetect extends BaseScan {
 
-    public libraryDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
-        super(callbacks, iHttpRequestResponse, helpers);
+    public libraryDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
+        super(callbacks, iHttpRequestResponse, helpers, isBypass);
     }
 
     @Override

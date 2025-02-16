@@ -175,7 +175,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
         String key = null;
         BaseScan baseScan = null;
-        baseScan = ScanFactory.createScan(mode, iHttpRequestResponse, helpers, callbacks);
+        baseScan = ScanFactory.createScan(mode, iHttpRequestResponse, helpers, callbacks,this.tags.getBaseSettingTagClass().isStartBypass());
 
         if (baseScan == null) {
             return null;

@@ -25,7 +25,7 @@ public class Customhelps {
     public Customhelps() {
     }
 
-    public String randomString(Integer j){
+    public static String randomString(Integer j){
         String characters = "abcdefghijklmnopqrstuvwxyz0123456789";
         StringBuilder result = new StringBuilder(4);
         Random random = new Random();

@@ -20,8 +20,8 @@ import static burp.utils.Customhelps.tabFormat;
 
 public class versionDetect extends BaseScan {
 
-    public versionDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
-        super(callbacks, iHttpRequestResponse, helpers);
+    public versionDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
+        super(callbacks, iHttpRequestResponse, helpers, isBypass);
     }
 
     @Override

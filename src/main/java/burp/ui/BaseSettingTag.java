@@ -13,7 +13,7 @@ public class BaseSettingTag {
 
     private JCheckBox isStartBox;
     private JCheckBox isStartLowPercept;
-
+    private JCheckBox isStartBypass;
     private JCheckBox isScanGetJsonBox;
     private JCheckBox isScanPostJsonBox;
     private JCheckBox isScanCookieJsonBox;
@@ -31,6 +31,7 @@ public class BaseSettingTag {
         this.input1_1(baseSetting, c);
         this.input1_2(baseSetting, c);
         this.input1_3(baseSetting, c);
+        this.input1_4(baseSetting, c);
 //        this.input2_1(baseSetting, c);
 //        this.input2_2(baseSetting, c);
 //        this.input2_3(baseSetting, c);
@@ -38,9 +39,9 @@ public class BaseSettingTag {
 //        this.input2_5(baseSetting, c);
 //        this.input2_6(baseSetting, c);
 
-        this.input3_1(baseSetting, c);
-        this.input3_2(baseSetting, c);
-        this.input3_3(baseSetting, c);
+//        this.input3_1(baseSetting, c);
+//        this.input3_2(baseSetting, c);
+//        this.input3_3(baseSetting, c);
 
         tabs.addTab("基本设置", baseSetting);
     }
@@ -71,6 +72,14 @@ public class BaseSettingTag {
         c.gridx = 0;
         c.gridy = 3;
         baseSetting.add(this.isStartLowPercept, c);
+    }
+    private void input1_4(JPanel baseSetting, GridBagConstraints c) {
+        this.isStartBypass = new JCheckBox("Bypass waf", this.yamlReader.getBoolean("isStartBypass"));
+        this.isStartBypass.setFont(new Font("Serif", Font.PLAIN, this.isStartBypass.getFont().getSize()));
+        c.insets = new Insets(5, 5, 5, 5);
+        c.gridx = 0;
+        c.gridy = 4;
+        baseSetting.add(this.isStartBypass, c);
     }
 
 //    private void input2_1(JPanel baseSetting, GridBagConstraints c) {
@@ -128,33 +137,33 @@ public class BaseSettingTag {
 //        baseSetting.add(this.isScanBodyJsonBox, c);
 //    }
 
-    private void input3_1(JPanel baseSetting, GridBagConstraints c) {
-        JLabel br_lbl_3_1 = new JLabel("应用程序配置");
-        br_lbl_3_1.setForeground(new Color(255, 89, 18));
-        br_lbl_3_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_3_1.getFont().getSize() + 2));
-        c.insets = new Insets(15, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 9;
-        baseSetting.add(br_lbl_3_1, c);
-    }
+//    private void input3_1(JPanel baseSetting, GridBagConstraints c) {
+//        JLabel br_lbl_3_1 = new JLabel("应用程序配置");
+//        br_lbl_3_1.setForeground(new Color(255, 89, 18));
+//        br_lbl_3_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_3_1.getFont().getSize() + 2));
+//        c.insets = new Insets(15, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 9;
+//        baseSetting.add(br_lbl_3_1, c);
+//    }
+//
+//    private void input3_2(JPanel baseSetting, GridBagConstraints c) {
+//        this.isStartCmdEchoExtensionBox = new JCheckBox("命令回显扩展-启动", this.yamlReader.getBoolean("application.cmdEchoExtension.config.isStart"));
+//        this.isStartCmdEchoExtensionBox.setFont(new Font("Serif", Font.PLAIN, this.isStartCmdEchoExtensionBox.getFont().getSize()));
+//        c.insets = new Insets(5, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 10;
+//        baseSetting.add(this.isStartCmdEchoExtensionBox, c);
+//    }
 
-    private void input3_2(JPanel baseSetting, GridBagConstraints c) {
-        this.isStartCmdEchoExtensionBox = new JCheckBox("命令回显扩展-启动", this.yamlReader.getBoolean("application.cmdEchoExtension.config.isStart"));
-        this.isStartCmdEchoExtensionBox.setFont(new Font("Serif", Font.PLAIN, this.isStartCmdEchoExtensionBox.getFont().getSize()));
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 10;
-        baseSetting.add(this.isStartCmdEchoExtensionBox, c);
-    }
-
-    private void input3_3(JPanel baseSetting, GridBagConstraints c) {
-        this.isStartRemoteCmdExtensionBox = new JCheckBox("远程命令扩展-启动", this.yamlReader.getBoolean("application.remoteCmdExtension.config.isStart"));
-        this.isStartRemoteCmdExtensionBox.setFont(new Font("Serif", Font.PLAIN, this.isStartRemoteCmdExtensionBox.getFont().getSize()));
-        c.insets = new Insets(5, 5, 5, 5);
-        c.gridx = 0;
-        c.gridy = 11;
-        baseSetting.add(this.isStartRemoteCmdExtensionBox, c);
-    }
+//    private void input3_3(JPanel baseSetting, GridBagConstraints c) {
+//        this.isStartRemoteCmdExtensionBox = new JCheckBox("远程命令扩展-启动", this.yamlReader.getBoolean("application.remoteCmdExtension.config.isStart"));
+//        this.isStartRemoteCmdExtensionBox.setFont(new Font("Serif", Font.PLAIN, this.isStartRemoteCmdExtensionBox.getFont().getSize()));
+//        c.insets = new Insets(5, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 11;
+//        baseSetting.add(this.isStartRemoteCmdExtensionBox, c);
+//    }
 
     public Boolean isStart() {
         return this.isStartBox.isSelected();
@@ -165,11 +174,15 @@ public class BaseSettingTag {
         return this.isStartLowPercept.isSelected();
     }
 
-    public Boolean isStartCmdEchoExtension() {
-        return this.isStartCmdEchoExtensionBox.isSelected();
+    public Boolean isStartBypass() {
+        return this.isStartBypass.isSelected();
     }
 
-    public Boolean isStartRemoteCmdExtension() {
-        return this.isStartRemoteCmdExtensionBox.isSelected();
-    }
+//    public Boolean isStartCmdEchoExtension() {
+//        return this.isStartCmdEchoExtensionBox.isSelected();
+//    }
+//
+//    public Boolean isStartRemoteCmdExtension() {
+//        return this.isStartRemoteCmdExtensionBox.isSelected();
+//    }
 }

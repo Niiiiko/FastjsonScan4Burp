@@ -8,7 +8,7 @@ import java.lang.reflect.Constructor;
 
 public class ScanFactory {
 
-    public static BaseScan createScan(String extendName,IHttpRequestResponse iHttpRequestResponse,IExtensionHelpers helpers,IBurpExtenderCallbacks callbacks) throws ClassNotFoundException, NoSuchMethodException {
+    public static BaseScan createScan(String extendName,IHttpRequestResponse iHttpRequestResponse,IExtensionHelpers helpers,IBurpExtenderCallbacks callbacks,boolean isBypass) throws ClassNotFoundException, NoSuchMethodException {
         if (extendName == null || extendName.length()<=0){
             throw new IllegalArgumentException("无法找到调用的插件名称");
         }
@@ -17,10 +17,11 @@ public class ScanFactory {
         Constructor<?> declaredConstructor = clazz.getDeclaredConstructor(
                 IBurpExtenderCallbacks.class,
                 IHttpRequestResponse.class,
-                IExtensionHelpers.class
+                IExtensionHelpers.class,
+                boolean.class
         );
         try {
-            return (BaseScan) declaredConstructor.newInstance(callbacks, iHttpRequestResponse, helpers);
+            return (BaseScan) declaredConstructor.newInstance(callbacks, iHttpRequestResponse, helpers,isBypass);
         } catch (Exception e) {
             throw new ClassNotFoundException();
         }

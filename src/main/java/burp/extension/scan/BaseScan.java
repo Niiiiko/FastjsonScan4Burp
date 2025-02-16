@@ -5,6 +5,8 @@ import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
 import burp.bean.ScanResultType;
 import burp.dnslogs.DnslogInterface;
+import burp.extension.bypass.PayloadBypass;
+import burp.ui.Tags;
 import burp.utils.YamlReader;
 
 import java.lang.reflect.InvocationTargetException;
@@ -38,9 +40,10 @@ public abstract class BaseScan {
 
     protected DnslogInterface dnsLog;
     protected YamlReader yamlReader;
+    private boolean isBypass;
 
 
-    protected BaseScan(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
+    protected BaseScan(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
         this.callbacks = callbacks;
         this.helpers = helpers;
         this.payloads = new ArrayList<>();
@@ -50,6 +53,7 @@ public abstract class BaseScan {
         this.customBurpUrl = new CustomBurpUrl(callbacks,iHttpRequestResponse);
         this.randomList = new ArrayList<>();
         this.iHttpRequestResponseList = new ArrayList<>();
+        this.isBypass = isBypass;
     }
 
     protected IHttpRequestResponse run(String payload){
@@ -57,6 +61,9 @@ public abstract class BaseScan {
             Thread.sleep(1200);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+        if (this.isBypass){
+            payload = PayloadBypass.processJson(payload,false);
         }
         List<String> headers = customBurpUrl.getHttpRequestHeaders();
         byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
@@ -71,6 +78,9 @@ public abstract class BaseScan {
             Thread.sleep(1200);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+        if (this.isBypass){
+            payloads = PayloadBypass.processJson(payloads,true);
         }
         byte[] request = iHttpRequestResponse.getRequest();
         try {

@@ -21,8 +21,8 @@ import static burp.utils.Customhelps.tabFormat;
  * @Description:
  */
 public class RemoteScan extends BaseScan {
-    public RemoteScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
-        super(callbacks,iHttpRequestResponse,helpers);
+    public RemoteScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
+        super(callbacks,iHttpRequestResponse,helpers, isBypass);
     }
 
     @Override

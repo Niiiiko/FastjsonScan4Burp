@@ -22,8 +22,8 @@ import static burp.utils.Customhelps.tabFormat;
  */
 public class LocalScan extends BaseScan {
 
-    public LocalScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
-        super(callbacks, iHttpRequestResponse, helpers);
+    public LocalScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
+        super(callbacks, iHttpRequestResponse, helpers, isBypass);
     }
 
     @Override

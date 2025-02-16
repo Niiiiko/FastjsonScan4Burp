@@ -24,8 +24,8 @@ import static burp.utils.Customhelps.tabFormat;
 public class lowPerceptScan extends BaseScan {
 
 
-    public lowPerceptScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers) {
-        super(callbacks, iHttpRequestResponse, helpers);
+    public lowPerceptScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
+        super(callbacks, iHttpRequestResponse, helpers, isBypass);
     }
 
     @Override

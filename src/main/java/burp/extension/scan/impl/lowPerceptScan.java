@@ -107,34 +107,31 @@ public class lowPerceptScan extends BaseScan {
             if(bodyContent == null|| bodyContent.length()<=0){
                 continue;
             }
-
+            boolean isMatch = bodyContent.contains(dnslog.getRandomPredomain());
             // dns平台有结果且匹配random 则[+]，否则[-]
-            if (bodyContent.contains(dnslog.getRandomPredomain())){
-                // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
-                if (flag){
-                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                            customBurpUrl.getRequestMethod(),
-                            getExtensionName(),
-                            customBurpUrl.getHttpResponseStatus(),
-                            payload,
-                            tabFormat(ScanResultType.IS_FASTJSON),
-                            newRequestResonse,
-                            Issus.State.SAVE);
-                    issuses.add(issus);
-                    flag = false;
-                }else {
-                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                            customBurpUrl.getRequestMethod(),
-                            getExtensionName(),
-                            customBurpUrl.getHttpResponseStatus(),
-                            payload,
-                            tabFormat(ScanResultType.IS_FASTJSON),
-                            newRequestResonse,
-                            Issus.State.ADD);
-                    issuses.add(issus);
-                }
-                // 第一次发现，havePoc = true
 
+            // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
+            if (flag){
+                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                        customBurpUrl.getRequestMethod(),
+                        getExtensionName(),
+                        customBurpUrl.getHttpResponseStatus(),
+                        isMatch?payload:null,
+                        isMatch?tabFormat(ScanResultType.IS_FASTJSON):tabFormat(ScanResultType.NOT_FOUND),
+                        newRequestResonse,
+                        Issus.State.SAVE);
+                issuses.add(issus);
+                flag = false;
+            }else {
+                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                        customBurpUrl.getRequestMethod(),
+                        getExtensionName(),
+                        customBurpUrl.getHttpResponseStatus(),
+                        isMatch?payload:null,
+                        isMatch?tabFormat(ScanResultType.IS_FASTJSON):tabFormat(ScanResultType.NOT_FOUND),
+                        newRequestResonse,
+                        Issus.State.ADD);
+                issuses.add(issus);
             }
         }
         if (!issuses.isEmpty()){

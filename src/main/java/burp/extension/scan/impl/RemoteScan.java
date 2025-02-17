@@ -95,7 +95,7 @@ public class RemoteScan extends BaseScan {
             }
         }
 
-        if (havePoc){
+        if (!issuses.isEmpty()){
             return issuses;
         }
         //加入二次验证后需要在最后进行判断

@@ -65,7 +65,6 @@ public class EyesDnslog implements DnslogInterface {
         httpRequest.readTimeout(30 * 1000);
         httpRequest.connectTimeout(30 * 1000);
         httpRequest.followRedirects(false);
-
         String body = httpRequest.body();
         if (!httpRequest.ok()){
             throw new RuntimeException(
@@ -76,9 +75,11 @@ public class EyesDnslog implements DnslogInterface {
                     )
             );
         }
+        httpRequest.disconnect();
         if (body.contains("[]")){
             return null;
         }
+
         return body;
     }
 
@@ -105,9 +106,11 @@ public class EyesDnslog implements DnslogInterface {
                     )
             );
         }
+        httpRequest.disconnect();
         if (body.contains("[]")){
             return null;
         }
+
         return body;
     }
 

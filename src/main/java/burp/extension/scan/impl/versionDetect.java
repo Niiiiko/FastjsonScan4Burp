@@ -84,7 +84,7 @@ public class versionDetect extends BaseScan {
             }
             i ++;
         }
-        if (havePoc){
+        if (!issuses.isEmpty()){
             return issuses;
         }
 

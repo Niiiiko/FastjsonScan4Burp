@@ -40,14 +40,17 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         callbacks.setExtensionName("FastJsonScan");
         this.helpers = callbacks.getHelpers();
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
-        this.stderr = new PrintWriter(callbacks.getStderr(), true);
         this.tags = new Tags(callbacks, name);
         this.yamlReader = YamlReader.getInstance(callbacks);
-        stdout.println("success");
 
         callbacks.addSuiteTab(this.tags);
         callbacks.registerScannerCheck(this);
         callbacks.registerContextMenuFactory(this);
+        this.stdout.println("================插件加载成功================");
+        this.stdout.println("配置文件加载成功");
+        this.stdout.println(String.format("当前dns平台为： %s", yamlReader.getString("dnsLogModule.provider")));
+        this.stdout.println("下载地址: https://github.com/Niiiiko/FastjsonScan");
+        this.stdout.println("========================================");
 
     }
 
@@ -119,7 +122,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                 return null;
             }
         }
-        // todo 避免迭代器为空报错
         List<Issus> tabIssues = null;
         // 判断是否开启低感知插件
         if (this.tags.getBaseSettingTagClass().isStartLowPercept()) {
@@ -134,30 +136,37 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                         issues.add(tabIssue);
                 }
             }
-            return issues;
         }
-        // 正常扫描逻辑
-        try {
-            tabIssues = scan(iHttpRequestResponse,"RemoteScan");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        List<Issus> tabIssues2 = null;
-        try {
-            tabIssues2 = scan(iHttpRequestResponse,"LocalScan");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        Set<Issus> mergedSet = new LinkedHashSet<>();
-        mergedSet.addAll(tabIssues);
-        mergedSet.addAll(tabIssues2);
-        List<Issus> allIssues = new ArrayList<>(mergedSet);
-        if (allIssues != null){
-            for (Issus tabIssue:allIssues){
-                if (tabIssue.getPayload() !=null)
-                    issues.add(tabIssue);
+
+        if (this.tags.getBaseSettingTagClass().isStartRemoteCmdExtension()) {
+            // 正常扫描逻辑
+            try {
+                tabIssues = scan(iHttpRequestResponse,"RemoteScan");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (tabIssues != null){
+                for (Issus tabIssue:tabIssues){
+                    if (tabIssue.getPayload() !=null)
+                        issues.add(tabIssue);
+                }
             }
         }
+
+        if (this.tags.getBaseSettingTagClass().isStartCmdEchoExtension()) {
+            try {
+                tabIssues = scan(iHttpRequestResponse,"LocalScan");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (tabIssues != null){
+                for (Issus tabIssue:tabIssues){
+                    if (tabIssue.getPayload() !=null)
+                        issues.add(tabIssue);
+                }
+            }
+        }
+
         return issues;
     }
     /**
@@ -167,7 +176,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
      * @param mode
      * @return
      */
-    private List<Issus> scan(IHttpRequestResponse iHttpRequestResponse, String mode) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
+    private List<Issus> scan(IHttpRequestResponse iHttpRequestResponse, String mode){
         FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
         String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
         String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
@@ -175,8 +184,14 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
         String key = null;
         BaseScan baseScan = null;
-        baseScan = ScanFactory.createScan(mode, iHttpRequestResponse, helpers, callbacks,this.tags.getBaseSettingTagClass().isStartBypass());
-
+        try {
+            baseScan = ScanFactory.createScan(mode, iHttpRequestResponse, helpers, callbacks,this.tags.getBaseSettingTagClass().isStartBypass());
+        } catch (Exception e) {
+            this.stdout.println("================扫描模块异常================");
+            this.stdout.println(String.format("模块调用异常: %s", mode));
+            this.stdout.println(e);
+            this.stdout.println("========================================");
+        }
         if (baseScan == null) {
             return null;
         }
@@ -213,7 +228,20 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return null;
         }
         // 循环调用dnslog，填入payload
-        List<Issus> tabIssues = baseScan.insertPayloads(key);
+        List<Issus> tabIssues = null;
+        try {
+            this.stdout.println("================开始扫描================");
+            this.stdout.println(String.format("扫描模块%s", mode));
+            this.stdout.println(String.format("扫描地址%s", url));
+            this.stdout.println("========================================");
+            tabIssues = baseScan.insertPayloads(key);
+        } catch (Exception e) {
+            this.stdout.println("================扫描异常================");
+            this.stdout.println(String.format("模块调用异常: %s", mode));
+            this.stdout.println(e);
+            this.stdout.println("========================================");
+            return null;
+        }
         for (Issus tabIssue:tabIssues){
             switch (tabIssue.getState()){
                 case SAVE:
@@ -234,9 +262,9 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
                             tabIssue.getResult(),
                             tabIssue.getiHttpRequestResponse());
                     break;
-                case ERROR:
-                case TIMEOUT:
-                    break;
+//                case ERROR:
+//                case TIMEOUT:
+//                    break;
             }
         }
         return tabIssues;
@@ -406,11 +434,12 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         jMenuItem4.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"libraryDetect"));
         JMenuItem jMenuItem5 = new JMenuItem("LowPerceptScan");
         jMenuItem5.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"lowPerceptScan"));
+        menuItems.add(jMenuItem5);
         menuItems.add(jMenuItem);
         menuItems.add(jMenuItem2);
         menuItems.add(jMenuItem3);
         menuItems.add(jMenuItem4);
-        menuItems.add(jMenuItem5);
+
         return menuItems;
     }
 

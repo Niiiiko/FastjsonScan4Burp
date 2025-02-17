@@ -3,6 +3,7 @@ package burp.extension.scan.impl;
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
+import burp.bean.CustomBurpUrl;
 import burp.bean.Issus;
 import burp.bean.ScanResultType;
 import burp.extension.scan.BaseScan;
@@ -37,19 +38,22 @@ public class LocalScan extends BaseScan {
         String cmdHeader = this.yamlReader.getString("application.cmdEchoExtension.config.commandInputPointField");
         String randomString = new Customhelps().randomString(16);
         cmdHeader = cmdHeader + ": echo " + randomString;
-        List<String> headers = customBurpUrl.getHttpRequestHeaders();
+        List<String> headers = new ArrayList<>();
+        headers = customBurpUrl.getHttpRequestHeaders();
         headers.add(cmdHeader);
         byte[] bytes = helpers.buildHttpMessage(headers, new byte[0]);
         iHttpRequestResponse = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(),bytes);
+        customBurpUrl = new CustomBurpUrl(callbacks,iHttpRequestResponse);
         while (payloadIterator.hasNext()){
             String payload = payloadIterator.next();
             if (jsonKey ==null || jsonKey.length()<=0){
                 newRequestResonse = run(payload);
+
             }else {
                 newRequestResonse = run(payload, jsonKey);
             }
             try {
-                Thread.sleep(5000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

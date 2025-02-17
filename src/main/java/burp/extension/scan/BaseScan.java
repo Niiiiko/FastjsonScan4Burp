@@ -9,6 +9,7 @@ import burp.extension.bypass.PayloadBypass;
 import burp.ui.Tags;
 import burp.utils.YamlReader;
 
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import static burp.utils.Customhelps.tabFormat;
  * @Description:
  */
 public abstract class BaseScan {
+    public PrintWriter stdout;
     protected IBurpExtenderCallbacks callbacks;
 
     protected IExtensionHelpers helpers;
@@ -54,17 +56,26 @@ public abstract class BaseScan {
         this.randomList = new ArrayList<>();
         this.iHttpRequestResponseList = new ArrayList<>();
         this.isBypass = isBypass;
+        this.stdout = new PrintWriter(callbacks.getStdout(), true);
     }
 
     protected IHttpRequestResponse run(String payload){
         try {
-            Thread.sleep(1200);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         if (this.isBypass){
-            payload = PayloadBypass.processJson(payload,false);
+            payload = PayloadBypass.processJson(payload,true);
         }
+
+        this.stdout.println("================扫描详情================");
+        this.stdout.println(String.format("扫描地址: %s", customBurpUrl.getHttpRequestUrl().toString()));
+        this.stdout.println(String.format("扫描参数： %s", "content-type:json"));
+        this.stdout.println(String.format("扫描payload： %s", payloads));
+        this.stdout.println("========================================");
+        this.stdout.println(" ");
+
         List<String> headers = customBurpUrl.getHttpRequestHeaders();
         byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
         IHttpRequestResponse newRequestResp = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), bytes);
@@ -75,12 +86,12 @@ public abstract class BaseScan {
 
     protected IHttpRequestResponse run(String payloads,String key) {
         try {
-            Thread.sleep(1200);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         if (this.isBypass){
-            payloads = PayloadBypass.processJson(payloads,true);
+            payloads = PayloadBypass.processJson(payloads,false);
         }
         byte[] request = iHttpRequestResponse.getRequest();
         try {
@@ -99,6 +110,14 @@ public abstract class BaseScan {
                     }
                     request = helpers.updateParameter(request, newParam);
                     IHttpRequestResponse newRequestResp = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), request);
+
+                    this.stdout.println("================扫描详情================");
+                    this.stdout.println(String.format("扫描地址: %s", customBurpUrl.getHttpRequestUrl().toString()));
+                    this.stdout.println(String.format("扫描参数： %s", key));
+                    this.stdout.println(String.format("扫描payload： %s", payloads));
+                    this.stdout.println("========================================");
+                    this.stdout.println(" ");
+
                     this.customBurpUrl = new CustomBurpUrl(callbacks,newRequestResp);
                     return newRequestResp;
                 }
@@ -117,7 +136,7 @@ public abstract class BaseScan {
         List<Issus> issuses = new ArrayList<>();
         String tabResult = null ;
         try {
-            Thread.sleep(8000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -129,7 +148,13 @@ public abstract class BaseScan {
         // 开始进行二次验证
         Issus issus;
         try {
-            String dnsLogAllContent = dnslog.getAllContent();
+            String dnsLogAllContent = "";
+            dnsLogAllContent = dnslog.getAllContent();
+            this.stdout.println("================dnslog结果================");
+            this.stdout.println(String.format("插件模块: %s", extendName));
+            this.stdout.println(String.format("dnslog平台结果： %s", dnsLogAllContent));
+            this.stdout.println("========================================");
+            this.stdout.println(" ");
             if (dnsLogAllContent == null || dnsLogAllContent.length() <= 0) {
                 issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                         customBurpUrl.getRequestMethod(),

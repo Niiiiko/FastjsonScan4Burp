@@ -51,30 +51,29 @@ public class libraryDetect extends BaseScan {
                 continue;
             }
             bodyContent = bodyContent.toLowerCase();
-            if (bodyContent.contains(library.toLowerCase())) {
+            boolean isMatch = bodyContent.contains(library.toLowerCase());
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
-                if (flag){
-                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                            customBurpUrl.getRequestMethod(),
-                            getExtensionName(),
-                            customBurpUrl.getHttpResponseStatus(),
-                            payload,
-                            tabFormat(ScanResultType.LIBRARY_FOUND,library),
-                            newRequestResonse,
-                            Issus.State.SAVE);
-                    issuses.add(issus);
-                    flag = false;
-                }else {
-                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                            getExtensionName(),
-                            customBurpUrl.getRequestMethod(),
-                            customBurpUrl.getHttpResponseStatus(),
-                            payload,
-                            tabFormat(ScanResultType.LIBRARY_FOUND,library),
-                            newRequestResonse,
-                            Issus.State.ADD);
-                    issuses.add(issus);
-                }
+            if (flag){
+                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                        customBurpUrl.getRequestMethod(),
+                        getExtensionName(),
+                        customBurpUrl.getHttpResponseStatus(),
+                        isMatch?payload:null,
+                        isMatch?tabFormat(ScanResultType.LIBRARY_FOUND,library):tabFormat(ScanResultType.NOT_FOUND),
+                        newRequestResonse,
+                        Issus.State.SAVE);
+                issuses.add(issus);
+                flag = false;
+            }else {
+                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                        customBurpUrl.getRequestMethod(),
+                        getExtensionName(),
+                        customBurpUrl.getHttpResponseStatus(),
+                        isMatch?payload:null,
+                        isMatch?tabFormat(ScanResultType.LIBRARY_FOUND,library):tabFormat(ScanResultType.NOT_FOUND),
+                        newRequestResonse,
+                        Issus.State.ADD);
+                issuses.add(issus);
             }
         }
         return issuses;

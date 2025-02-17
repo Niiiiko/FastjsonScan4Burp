@@ -155,7 +155,9 @@ public class CustomBurpUrl {
      */
     public String getHttpResponseBody() {
         byte[] response = this.requestResponse.getResponse();
-
+        if (response == null){
+            return "";
+        }
         int bodyOffset = helpers.analyzeResponse(response).getBodyOffset();
         int length = response.length - bodyOffset;
         try {

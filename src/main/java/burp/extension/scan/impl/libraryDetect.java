@@ -51,7 +51,9 @@ public class libraryDetect extends BaseScan {
                 continue;
             }
             bodyContent = bodyContent.toLowerCase();
+            exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload.replace("libraries",library),bodyContent);
             boolean isMatch = bodyContent.contains(library.toLowerCase());
+            //todo 添加布尔匹配函数
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
             if (flag){
                 issus = new Issus(customBurpUrl.getHttpRequestUrl(),

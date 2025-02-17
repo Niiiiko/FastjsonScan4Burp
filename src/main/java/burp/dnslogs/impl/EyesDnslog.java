@@ -17,7 +17,7 @@ public class EyesDnslog implements DnslogInterface {
     private String Identifier;
     private String token;
     private String random;
-    private String randomGroup;
+//    private String randomGroup;
     private String api;
     private YamlReader yamlReader;
     private String randomDnsUrl;
@@ -29,7 +29,7 @@ public class EyesDnslog implements DnslogInterface {
         this.api = "https://eyes.sh";
         this.Identifier = yamlReader.getString("dnsLogModule.EyesDnslog.Identifier").trim();
         this.random = customhelps.randomString(4);
-        this.randomGroup = "n1ngoax";
+//        this.randomGroup = "n1ngoax";
         this.token = yamlReader.getString("dnsLogModule.EyesDnslog.token").trim();
         init();
     }
@@ -40,7 +40,9 @@ public class EyesDnslog implements DnslogInterface {
         if (this.Identifier == null || this.Identifier.length() <= 0) {
             throw new RuntimeException(String.format("%s 扩展-key参数不能为空", this.getExtensionName()));
         }
-        String temporaryDomainName = this.random + "." + this.randomGroup + "." + this.Identifier + "." + "eyes.sh";
+//        String temporaryDomainName = this.random + "." + this.randomGroup + "." + this.Identifier + "." + "eyes.sh";
+        String temporaryDomainName = this.random + "." + this.Identifier + "." + "eyes.sh";
+
         this.randomDnsUrl = temporaryDomainName;
     }
     @Override
@@ -55,7 +57,7 @@ public class EyesDnslog implements DnslogInterface {
 
     @Override
     public String getBodyContent() {
-        String url = String.format("%s/api/group/dns/%s/%s/?token=%s",api,Identifier,randomGroup,token);
+        String url = String.format("%s/api/dns/%s/%s/?token=%s",api,Identifier,random,token);
         HttpRequest httpRequest = HttpRequest.get(url);
         String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/614.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
         httpRequest.header("User-Agent",ua);
@@ -76,16 +78,19 @@ public class EyesDnslog implements DnslogInterface {
             );
         }
         httpRequest.disconnect();
-        if (body.contains("[]")){
+        if (body.equals("False")){
             return null;
+        }else {
+            return random;
         }
 
-        return body;
+//        return body;
     }
 
+    // eyes.sh无法做二次校验
     @Override
     public String getAllContent() {
-        String url = String.format("%s/api/group/dns/%s/%s/?token=%s",api,Identifier,randomGroup,token);
+        String url = String.format("%s/api/group/dns/%s/%s/?token=%s",api,Identifier,random,token);
         HttpRequest httpRequest = HttpRequest.get(url);
         String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/604.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
         httpRequest.header("User-Agent",ua);

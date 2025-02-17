@@ -97,4 +97,5 @@ public class Customhelps {
     public static String tabFormat(ScanResultType type, Object... args){
         return type.format(args);
     }
+//    public static String output()
 }

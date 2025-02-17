@@ -28,20 +28,17 @@ public class RemoteScan extends BaseScan {
     @Override
     public List<Issus> insertPayloads(String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
         boolean flag = true;
-        boolean havePoc = false;
         List<String> payloads = yamlReader.getStringList("application.remoteCmdExtension.config.payloads");
-
         Iterator<String> payloadIterator = payloads.iterator();
         Issus issus = null;
         List<Issus> issuses = new ArrayList<>();
         // dnslos 平台初始化
-        YamlReader yamlReader = YamlReader.getInstance(callbacks);
         IHttpRequestResponse newRequestResonse = null;
         while (payloadIterator.hasNext()){
             DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
             String dnsurl = dnslog.getRandomDnsUrl();
             String payload = payloadIterator.next();
-            if (jsonKey == null || jsonKey.length()<=0){
+            if (jsonKey == null){
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
             }else {
                 newRequestResonse = run(payload.replace("dnslog-url",dnsurl),jsonKey);
@@ -59,6 +56,7 @@ public class RemoteScan extends BaseScan {
                 bodyContent = null;
                 System.err.println("获取 bodyContent 失败：" + e.getMessage()); // 记录错误信息
             }
+            exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload.replace("dnslog-url",dnsurl),bodyContent);
             //修正返回issus结果：仅for循环结束后或找到payload后才变为[+]/[-]
             // dns平台返回为空且payload已循环完毕，则[-]， 否则直接跳入下一个循环
             if(bodyContent == null|| bodyContent.length()<=0){
@@ -91,14 +89,13 @@ public class RemoteScan extends BaseScan {
                     issuses.add(issus);
                 }
                 // 第一次发现，havePoc = true
-                havePoc = true;
             }
         }
 
         if (!issuses.isEmpty()){
             return issuses;
         }
-        //加入二次验证后需要在最后进行判断
+        //todo 修正二次验证函数判断
         issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,null);
         return issuses;
     }

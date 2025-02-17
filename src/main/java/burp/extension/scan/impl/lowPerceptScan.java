@@ -34,7 +34,6 @@ public class lowPerceptScan extends BaseScan {
         boolean flag = true;
         IHttpRequestResponse newRequestResonse = null;
         List<Issus> issuses = new ArrayList<>();
-        boolean havePoc = false;
         Issus issus = null;
         if (jsonKey ==null || jsonKey.length()<=0){
             String httpRequestBody = customBurpUrl.getHttpRequestBody();
@@ -52,15 +51,16 @@ public class lowPerceptScan extends BaseScan {
                         IParameter newParam = null;
                         // 如果参数在 URL 中
                         if (parameter.getType() == IParameter.PARAM_URL) {
-                            newParam = helpers.buildParameter(jsonKey, parameter.getValue().replace("%7d",""), IParameter.PARAM_URL);
+                            newParam = helpers.buildParameter(jsonKey, parameter.getValue().replace("%7d","").replace("%5d",""), IParameter.PARAM_URL);
                         }
                         // 如果参数在 POST body 中
                         else if (parameter.getType() == IParameter.PARAM_BODY) {
-                            newParam = helpers.buildParameter(jsonKey, parameter.getValue().replace("%7d",""), IParameter.PARAM_BODY);
+                            newParam = helpers.buildParameter(jsonKey, parameter.getValue().replace("%7d","").replace("%5d",""), IParameter.PARAM_BODY);
                         }
                         request = helpers.updateParameter(request, newParam);
                         newRequestResonse = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), request);
                         this.customBurpUrl = new CustomBurpUrl(callbacks,newRequestResonse);
+                        exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,parameter.getValue().replace("%7d","").replace("%5d",""), customBurpUrl.getHttpResponseBody());
                     }
                 }
             }catch (Exception e){
@@ -102,6 +102,8 @@ public class lowPerceptScan extends BaseScan {
                 bodyContent = null;
                 System.err.println("获取 bodyContent 失败：" + e.getMessage()); // 记录错误信息
             }
+            exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload.replace("dnslog-url",dnsurl),bodyContent);
+
             //修正返回issus结果：仅for循环结束后或找到payload后才变为[+]/[-]
             // dns平台返回为空且payload已循环完毕，则[-]， 否则直接跳入下一个循环
             if(bodyContent == null|| bodyContent.length()<=0){

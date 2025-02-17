@@ -48,6 +48,7 @@ public class versionDetect extends BaseScan {
             }
             String bodyContent = customBurpUrl.getHttpResponseBody();
             // 捕获api.ceye 503异常，避免导致issus未更新
+            exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload,bodyContent);
 
             if(bodyContent == null|| bodyContent.length()<=0){
                 continue;

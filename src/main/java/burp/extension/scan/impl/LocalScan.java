@@ -59,6 +59,8 @@ public class LocalScan extends BaseScan {
             }
             String responseBody = null;
             responseBody = customBurpUrl.getHttpResponseBody();
+            exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload,responseBody);
+
             if (responseBody.contains(randomString)){
                 if (flag){
                     issus = new Issus(customBurpUrl.getHttpRequestUrl(),

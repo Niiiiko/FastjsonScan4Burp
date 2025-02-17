@@ -12,10 +12,8 @@ import burp.utils.YamlReader;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import static burp.utils.Customhelps.tabFormat;
 
@@ -69,12 +67,6 @@ public abstract class BaseScan {
             payload = PayloadBypass.processJson(payload,true);
         }
 
-        this.stdout.println("================扫描详情================");
-        this.stdout.println(String.format("扫描地址: %s", customBurpUrl.getHttpRequestUrl().toString()));
-        this.stdout.println(String.format("扫描参数： %s", "content-type:json"));
-        this.stdout.println(String.format("扫描payload： %s", payloads));
-        this.stdout.println("========================================");
-        this.stdout.println(" ");
 
         List<String> headers = customBurpUrl.getHttpRequestHeaders();
         byte[] bytes = helpers.buildHttpMessage(headers, helpers.stringToBytes(payload));
@@ -111,13 +103,6 @@ public abstract class BaseScan {
                     request = helpers.updateParameter(request, newParam);
                     IHttpRequestResponse newRequestResp = callbacks.makeHttpRequest(iHttpRequestResponse.getHttpService(), request);
 
-                    this.stdout.println("================扫描详情================");
-                    this.stdout.println(String.format("扫描地址: %s", customBurpUrl.getHttpRequestUrl().toString()));
-                    this.stdout.println(String.format("扫描参数： %s", key));
-                    this.stdout.println(String.format("扫描payload： %s", payloads));
-                    this.stdout.println("========================================");
-                    this.stdout.println(" ");
-
                     this.customBurpUrl = new CustomBurpUrl(callbacks,newRequestResp);
                     return newRequestResp;
                 }
@@ -129,6 +114,20 @@ public abstract class BaseScan {
         return iHttpRequestResponse;
     }
     public abstract List<Issus> insertPayloads(String jsonKey) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException;
+
+    public void exportLogs(String extendName,String url,String key,String payload,String dnslogContent){
+        this.stdout.println(String.format("================%s扫描详情================",extendName));
+        this.stdout.println(String.format("扫描地址: %s", url));
+        this.stdout.println(String.format("扫描参数： %s", key!=null?key:"content-type: application/json"));
+        this.stdout.println(String.format("扫描payload： %s", payload));
+        this.stdout.println(String.format("dnslog检测/响应包： %s", dnslogContent));
+        Date d = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String endTime = sdf.format(d);
+        this.stdout.println(String.format("检测时间： %s", endTime));
+        this.stdout.println("========================================");
+        this.stdout.println(" ");
+    }
 
     public abstract String getExtensionName();
     protected List<Issus> checkoutDnslog(String extendName,DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {

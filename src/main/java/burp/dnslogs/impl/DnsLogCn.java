@@ -108,7 +108,7 @@ public class DnsLogCn implements DnslogInterface {
     }
 
     @Override
-    public String getAllContent() {
+    public String getAllContent(String random) {
         return null;
     }
 
@@ -125,5 +125,10 @@ public class DnsLogCn implements DnslogInterface {
     @Override
     public String getRandomPredomain() {
         return this.randomDnsUrl.replace(".dnslog.cn","");
+    }
+
+    @Override
+    public String checkConnection() {
+        return "";
     }
 }

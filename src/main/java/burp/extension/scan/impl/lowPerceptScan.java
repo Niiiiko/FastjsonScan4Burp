@@ -81,14 +81,16 @@ public class lowPerceptScan extends BaseScan {
             }
         List<String> payloads = this.yamlReader.getStringList("application.lowPerceptionScan.config.dnslogPayloads");
         Iterator<String> payloadIterator = payloads.iterator();
+
         while (payloadIterator.hasNext()){
             DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
             String dnsurl = dnslog.getRandomDnsUrl();
             String payload = payloadIterator.next();
+            payload = payload.replace("dnslog-url",dnsurl);
             if (jsonKey == null || jsonKey.length()<=0){
-                newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
+                newRequestResonse = run(payload);
             }else {
-                newRequestResonse = run(payload.replace("dnslog-url",dnsurl),jsonKey);
+                newRequestResonse = run(payload,jsonKey);
             }
             // 记录随机值存入list中，以便二次验证
             randomList.add(dnslog.getRandomPredomain());

@@ -8,7 +8,8 @@ public enum ScanResultType {
     VERSION_INFO("[+] version: %s"),
     LIBRARY_FOUND("[+] library: %s"),
     NOT_FOUND("[-] Payload not find"),
-    DNS_ERROR("[-] Dnslog error");
+    DNS_ERROR("[-] Dnslog error"),
+    WAIT_CONFIRM("[=] Task timeout");
     private final String messageFormat;
 
     ScanResultType(String messageFormat) {

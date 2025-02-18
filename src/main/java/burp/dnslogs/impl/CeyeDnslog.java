@@ -12,7 +12,7 @@ import com.github.kevinsawicki.http.HttpRequest;
  * @Date: 2025/1/20 16:10
  * @Description:
  */
-public class Ceye implements DnslogInterface {
+public class CeyeDnslog implements DnslogInterface {
 
     private String Identifier;
     private String token;
@@ -22,7 +22,7 @@ public class Ceye implements DnslogInterface {
     private String randomDnsUrl;
 
 
-    public Ceye(IBurpExtenderCallbacks callbacks){
+    public CeyeDnslog(IBurpExtenderCallbacks callbacks){
         Customhelps customhelps = new Customhelps();
         this.yamlReader = YamlReader.getInstance(callbacks);
         this.api = "http://api.ceye.io";
@@ -52,8 +52,13 @@ public class Ceye implements DnslogInterface {
     }
 
     @Override
+    public String checkConnection() {
+        return "";
+    }
+
+    @Override
     public String getBodyContent() {
-        String url = String.format("%s/v1/records?token=%s&type=dns&filter=%s",api,token,random);
+        String url = String.format("%s/v1/records?token=%s&type=dns&filter=%s",api,token,"random");
         HttpRequest httpRequest = HttpRequest.get(url);
         String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/604.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
         httpRequest.header("User-Agent",ua);
@@ -81,7 +86,7 @@ public class Ceye implements DnslogInterface {
     }
 
     @Override
-    public String getAllContent() {
+    public String getAllContent(String random) {
         String url = String.format("%s/v1/records?token=%s&type=dns",api,token);
         HttpRequest httpRequest = HttpRequest.get(url);
         String ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/604.2.15 (KHTML, like Gecko) Mobile/22B91 Ariver/1.0.10 Jupiter/1.0.0";
@@ -111,7 +116,7 @@ public class Ceye implements DnslogInterface {
 
     @Override
     public String getExtensionName() {
-        return "Ceye";
+        return "CeyeDnslog";
     }
 
 }

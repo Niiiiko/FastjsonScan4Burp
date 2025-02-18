@@ -69,7 +69,7 @@ public class BurpDnsLog implements DnslogInterface {
     }
 
     @Override
-    public String getAllContent() {
+    public String getAllContent(String random) {
         return null;
     }
 
@@ -86,5 +86,10 @@ public class BurpDnsLog implements DnslogInterface {
     @Override
     public String getRandomPredomain() {
         return this.randomDnsUrl.substring(0, this.randomDnsUrl.indexOf("."));
+    }
+
+    @Override
+    public String checkConnection() {
+        return "";
     }
 }

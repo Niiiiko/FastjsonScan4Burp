@@ -7,10 +7,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * @ClassName: Customhelps
@@ -94,8 +91,50 @@ public class Customhelps {
 
         return null;
     }
+    /**
+     * 获取精确到秒的时间戳
+     *
+     * @param date
+     * @return Integer
+     */
+    public static Integer getSecondTimestamp(Date date) {
+        if (null == date) {
+            return 0;
+        }
+        String timestamp = String.valueOf(date.getTime() / 1000);
+        return Integer.valueOf(timestamp);
+    }
     public static String tabFormat(ScanResultType type, Object... args){
         return type.format(args);
     }
-//    public static String output()
+
+    private static int levenshteinDistance(String s1, String s2) {
+        int m = s1.length();
+        int n = s2.length();
+        int[][] dp = new int[m + 1][n + 1];
+
+        for (int i = 0; i <= m; i++) {
+            for (int j = 0; j <= n; j++) {
+                if (i == 0) {
+                    dp[i][j] = j;
+                } else if (j == 0) {
+                    dp[i][j] = i;
+                } else {
+                    dp[i][j] = Math.min(
+                            Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1),
+                            dp[i - 1][j - 1] + (s1.charAt(i - 1) == s2.charAt(j - 1) ? 0 : 1)
+                    );
+                }
+            }
+        }
+        return dp[m][n];
+    }
+    public static boolean isSimilarity(String resp1,String resp2){
+        int distance = levenshteinDistance(resp1, resp2);
+        double similarity = 1 - (double) distance / Math.max(resp1.length(), resp2.length());
+        if (similarity>0.7){
+            return true;
+        }
+        return false;
+    }
 }

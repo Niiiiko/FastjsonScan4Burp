@@ -38,10 +38,11 @@ public class RemoteScan extends BaseScan {
             DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
             String dnsurl = dnslog.getRandomDnsUrl();
             String payload = payloadIterator.next();
+            payload = payload.replace("dnslog-url",dnsurl);
             if (jsonKey == null){
-                newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
+                newRequestResonse = run(payload);
             }else {
-                newRequestResonse = run(payload.replace("dnslog-url",dnsurl),jsonKey);
+                newRequestResonse = run(payload,jsonKey);
             }
             // 记录随机值存入list中，以便二次验证
             randomList.add(dnslog.getRandomPredomain());
@@ -82,7 +83,7 @@ public class RemoteScan extends BaseScan {
                           customBurpUrl.getRequestMethod(),
                           getExtensionName(),
                           customBurpUrl.getHttpResponseStatus(),
-                            payload,
+                          payload,
                           tabFormat(ScanResultType.PAYLOADS_FIND),
                             newRequestResonse,
                           Issus.State.ADD);

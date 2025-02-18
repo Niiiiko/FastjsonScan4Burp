@@ -6,6 +6,7 @@ import burp.IHttpRequestResponse;
 import burp.bean.Issus;
 import burp.bean.ScanResultType;
 import burp.extension.scan.BaseScan;
+import burp.utils.Customhelps;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -36,8 +37,21 @@ public class libraryDetect extends BaseScan {
         Issus issus = null;
         List<Issus> issuses = new ArrayList<>();
         IHttpRequestResponse newRequestResonse = null;
-
+        boolean isFirstLoop = true;
+        String errorClassHttpResponse = "";
+        String randomClass = "org.apache." + Customhelps.randomString(8);
         while (libraryIterator.hasNext()){
+            if (isFirstLoop){
+                isFirstLoop = false;
+                if (jsonKey == null || jsonKey.length()<=0){
+                    run(payload.replace("libraries",randomClass));
+                }else {
+                    run(payload.replace("libraries",randomClass),jsonKey);
+                }
+                errorClassHttpResponse = customBurpUrl.getHttpResponseBody();
+                exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload.replace("libraries",randomClass),errorClassHttpResponse);
+                continue;
+            }
             String library = libraryIterator.next();
             if (jsonKey == null || jsonKey.length()<=0){
                 newRequestResonse = run(payload.replace("libraries",library));
@@ -53,6 +67,7 @@ public class libraryDetect extends BaseScan {
             bodyContent = bodyContent.toLowerCase();
             exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload.replace("libraries",library),bodyContent);
             boolean isMatch = bodyContent.contains(library.toLowerCase());
+            boolean isSimilarity = Customhelps.isSimilarity(errorClassHttpResponse, customBurpUrl.getHttpResponseBody());
             //todo 添加布尔匹配函数
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
             if (flag){
@@ -60,8 +75,8 @@ public class libraryDetect extends BaseScan {
                         customBurpUrl.getRequestMethod(),
                         getExtensionName(),
                         customBurpUrl.getHttpResponseStatus(),
-                        isMatch?payload:null,
-                        isMatch?tabFormat(ScanResultType.LIBRARY_FOUND,library):tabFormat(ScanResultType.NOT_FOUND),
+                        isMatch||!isSimilarity?payload.replace("libraries",library):null,
+                        isMatch||!isSimilarity?tabFormat(ScanResultType.LIBRARY_FOUND,library):tabFormat(ScanResultType.NOT_FOUND),
                         newRequestResonse,
                         Issus.State.SAVE);
                 issuses.add(issus);
@@ -71,12 +86,13 @@ public class libraryDetect extends BaseScan {
                         customBurpUrl.getRequestMethod(),
                         getExtensionName(),
                         customBurpUrl.getHttpResponseStatus(),
-                        isMatch?payload:null,
-                        isMatch?tabFormat(ScanResultType.LIBRARY_FOUND,library):tabFormat(ScanResultType.NOT_FOUND),
+                        isMatch||!isSimilarity?payload.replace("libraries",library):null,
+                        isMatch||!isSimilarity?tabFormat(ScanResultType.LIBRARY_FOUND,library):tabFormat(ScanResultType.NOT_FOUND),
                         newRequestResonse,
                         Issus.State.ADD);
                 issuses.add(issus);
             }
+
         }
         return issuses;
     }

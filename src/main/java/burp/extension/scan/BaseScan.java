@@ -7,6 +7,7 @@ import burp.bean.ScanResultType;
 import burp.dnslogs.DnslogInterface;
 import burp.extension.bypass.PayloadBypass;
 import burp.ui.Tags;
+import burp.utils.Customhelps;
 import burp.utils.YamlReader;
 
 import java.io.PrintWriter;
@@ -41,7 +42,7 @@ public abstract class BaseScan {
     protected DnslogInterface dnsLog;
     protected YamlReader yamlReader;
     private boolean isBypass;
-
+    private Integer startTime;
 
     protected BaseScan(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
         this.callbacks = callbacks;
@@ -55,6 +56,7 @@ public abstract class BaseScan {
         this.iHttpRequestResponseList = new ArrayList<>();
         this.isBypass = isBypass;
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
+        this.startTime = Customhelps.getSecondTimestamp(new Date());
     }
 
     protected IHttpRequestResponse run(String payload){
@@ -130,6 +132,24 @@ public abstract class BaseScan {
     }
 
     public abstract String getExtensionName();
+
+    public Issus TimeoutCheck(int count){
+        int maxExecutionTime = 15 * count;
+        // 判断程序是否运行超时
+        Integer currentTime = Customhelps.getSecondTimestamp(new Date());
+        Integer runTime = currentTime - startTime;
+        if (runTime >= maxExecutionTime) {
+            return new Issus(customBurpUrl.getHttpRequestUrl(),
+                    customBurpUrl.getRequestMethod(),
+                    this.getExtensionName(),
+                    customBurpUrl.getHttpResponseStatus(),
+                    "timeout",
+                    tabFormat(ScanResultType.WAIT_CONFIRM),
+                    iHttpRequestResponse,
+                    Issus.State.SAVE);
+        }
+        return null;
+    }
     protected List<Issus> checkoutDnslog(String extendName,DnslogInterface dnslog,List<String>randlist,List<IHttpRequestResponse> httpRequestResponseList,List<String> payloads,List<String> versionList) {
 
         List<Issus> issuses = new ArrayList<>();
@@ -147,68 +167,64 @@ public abstract class BaseScan {
         // 开始进行二次验证
         Issus issus;
         try {
-            String dnsLogAllContent = "";
-            dnsLogAllContent = dnslog.getAllContent();
-            this.stdout.println("================dnslog结果================");
-            this.stdout.println(String.format("插件模块: %s", extendName));
-            this.stdout.println(String.format("dnslog平台结果： %s", dnsLogAllContent));
-            this.stdout.println("========================================");
-            this.stdout.println(" ");
-            if (dnsLogAllContent == null || dnsLogAllContent.length() <= 0) {
-                issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                        customBurpUrl.getRequestMethod(),
-                        this.getExtensionName(),
-                        customBurpUrl.getHttpResponseStatus(),
-                        null,
-                        tabFormat(ScanResultType.NOT_FOUND),
-                        this.iHttpRequestResponse,
-                        Issus.State.SAVE);
-                issuses.add(issus);
-            }else {
-                // 这里进行二次判断
-                boolean isFirst = true;
-                for (int i = 0; i < randlist.size(); i++) {
-                    // dnslog 内容匹配判断
-                    if (!dnsLogAllContent.contains(randlist.get(i))) {
-                        if ((i + 1) != randlist.size()) {
-                            continue;
-                        } else {
-                            issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                                    customBurpUrl.getRequestMethod(),
-                                    this.getExtensionName(),
-                                    customBurpUrl.getHttpResponseStatus(),
-                                    null,
-                                    tabFormat(ScanResultType.NOT_FOUND),
-                                    httpRequestResponseList.get(i),
-                                    Issus.State.SAVE);
-                            issuses.add(issus);
-                            return issuses;
-                        }
-                    }
-                    if (extendName.equals("versionDetect")){
-                        tabResult = tabFormat(ScanResultType.VERSION_INFO,versionList.get(i));}
-                    if (isFirst){
+            boolean isFirst = true;
+            for (int i = 0; i < randlist.size(); i++) {
+                String random = randlist.get(i);
+                String dnsLogAllContent = "";
+                dnsLogAllContent = dnslog.getAllContent(random);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                this.stdout.println(String.format("================%s二次校验详情================",extendName));
+                this.stdout.println(String.format("dnslog响应包： %s", dnsLogAllContent));
+                Date d = new Date();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String endTime = sdf.format(d);
+                this.stdout.println(String.format("检测时间： %s", endTime));
+                this.stdout.println("========================================\n");
+                // dnslog 内容匹配判断
+                if (!dnsLogAllContent.contains(random)) {
+                    if ((i + 1) != randlist.size()) {
+                        continue;
+                    } else {
                         issus = new Issus(customBurpUrl.getHttpRequestUrl(),
                                 customBurpUrl.getRequestMethod(),
                                 this.getExtensionName(),
                                 customBurpUrl.getHttpResponseStatus(),
-                                payloads.get(i),
-                                tabResult,
+                                null,
+                                tabFormat(ScanResultType.NOT_FOUND),
                                 httpRequestResponseList.get(i),
                                 Issus.State.SAVE);
                         issuses.add(issus);
-                        isFirst = false;
-                    }else {
-                        issus = new Issus(customBurpUrl.getHttpRequestUrl(),
-                                customBurpUrl.getRequestMethod(),
-                                this.getExtensionName(),
-                                customBurpUrl.getHttpResponseStatus(),
-                                payloads.get(i),
-                                tabResult,
-                                httpRequestResponseList.get(i),
-                                Issus.State.ADD);
-                        issuses.add(issus);
+                        return issuses;
                     }
+                }
+                if (extendName.equals("versionDetect")){
+                    tabResult = tabFormat(ScanResultType.VERSION_INFO,versionList.get(i));
+                }
+                if (isFirst){
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            this.getExtensionName(),
+                            customBurpUrl.getHttpResponseStatus(),
+                            payloads.get(i),
+                            tabResult,
+                            httpRequestResponseList.get(i),
+                            Issus.State.SAVE);
+                    issuses.add(issus);
+                    isFirst = false;
+                }else {
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            this.getExtensionName(),
+                            customBurpUrl.getHttpResponseStatus(),
+                            payloads.get(i),
+                            tabResult,
+                            httpRequestResponseList.get(i),
+                            Issus.State.ADD);
+                    issuses.add(issus);
                 }
             }
             return issuses;

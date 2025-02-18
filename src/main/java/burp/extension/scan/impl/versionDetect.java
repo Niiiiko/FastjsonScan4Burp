@@ -98,10 +98,11 @@ public class versionDetect extends BaseScan {
             String versionPayload = payloadIterator.next();
             String version = versionPayload.substring(0,versionPayload.indexOf(";"));
             String payload = versionPayload.substring(versionPayload.indexOf("payload=")+8);
+            payload = payload.replace("dnslog-url",dnsurl);
             if (jsonKey == null || jsonKey.length()<=0){
-                newRequestResonse = run(payload.replace("dnslog-url",dnsurl));
+                newRequestResonse = run(payload);
             }else {
-                newRequestResonse = run(payload.replace("dnslog-url",dnsurl),jsonKey);
+                newRequestResonse = run(payload,jsonKey);
             }
             // 记录随机值存入list中，以便二次验证
             randomList.add(dnslog.getRandomPredomain());

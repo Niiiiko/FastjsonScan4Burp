@@ -39,18 +39,18 @@ public abstract class BaseScan {
 
     protected List<IHttpRequestResponse> iHttpRequestResponseList;
 
-    protected DnslogInterface dnsLog;
+    protected String dnsName;
     protected YamlReader yamlReader;
     private boolean isBypass;
     private Integer startTime;
 
-    protected BaseScan(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
+    protected BaseScan(IBurpExtenderCallbacks callbacks,IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass,String dnsName) {
         this.callbacks = callbacks;
         this.helpers = helpers;
         this.payloads = new ArrayList<>();
         this.yamlReader = YamlReader.getInstance(callbacks);
         this.iHttpRequestResponse = iHttpRequestResponse;
-        this.dnsLog = null;
+        this.dnsName = dnsName;
         this.customBurpUrl = new CustomBurpUrl(callbacks,iHttpRequestResponse);
         this.randomList = new ArrayList<>();
         this.iHttpRequestResponseList = new ArrayList<>();

@@ -21,8 +21,8 @@ import static burp.utils.Customhelps.tabFormat;
  * @Description:
  */
 public class RemoteScan extends BaseScan {
-    public RemoteScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
-        super(callbacks,iHttpRequestResponse,helpers, isBypass);
+    public RemoteScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass,String dnsName) {
+        super(callbacks,iHttpRequestResponse,helpers, isBypass, dnsName);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class RemoteScan extends BaseScan {
         // dnslos 平台初始化
         IHttpRequestResponse newRequestResonse = null;
         while (payloadIterator.hasNext()){
-            DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
+            DnslogInterface dnslog = new DnsLog(callbacks, dnsName).run();
             String dnsurl = dnslog.getRandomDnsUrl();
             String payload = payloadIterator.next();
             payload = payload.replace("dnslog-url",dnsurl);
@@ -97,7 +97,7 @@ public class RemoteScan extends BaseScan {
             return issuses;
         }
         //todo 修正二次验证函数判断
-        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,null);
+        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, dnsName).run(),randomList,iHttpRequestResponseList,payloads,null);
         return issuses;
     }
 

@@ -55,9 +55,9 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         callbacks.registerContextMenuFactory(this);
         this.stdout.println("================插件正在加载================");
         this.stdout.println("配置文件加载成功");
-        this.stdout.println(String.format("当前dns平台为： %s", yamlReader.getString("dnsLogModule.provider")));
+        this.stdout.println(String.format("当前dns平台为： %s", this.tags.getBaseSettingTagClass().getDnslogName()));
         try {
-            new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
+            new DnsLog(callbacks, this.tags.getBaseSettingTagClass().getDnslogName()).run();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -238,10 +238,10 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             return null;
         }
         try {
-            baseScan = ScanFactory.createScan(mode, iHttpRequestResponse, helpers, callbacks,this.tags.getBaseSettingTagClass().isStartBypass());
+            baseScan = ScanFactory.createScan(mode, iHttpRequestResponse, helpers, callbacks,this.tags.getBaseSettingTagClass().isStartBypass(),this.tags.getBaseSettingTagClass().getDnslogName());
         } catch (Exception e) {
-            this.stdout.println("================扫描模块异常================");
-            this.stdout.println(String.format("模块调用异常: %s", mode));
+            this.stdout.println("================模块实例化异常================");
+            this.stdout.println(String.format("异常模块: %s", mode));
             this.stdout.println(e);
             this.stdout.println("========================================");
         }

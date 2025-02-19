@@ -20,8 +20,8 @@ import static burp.utils.Customhelps.tabFormat;
 
 public class versionDetect extends BaseScan {
 
-    public versionDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
-        super(callbacks, iHttpRequestResponse, helpers, isBypass);
+    public versionDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass,String dnsName) {
+        super(callbacks, iHttpRequestResponse, helpers, isBypass, dnsName);
     }
 
     @Override
@@ -93,7 +93,7 @@ public class versionDetect extends BaseScan {
         payloadIterator = payloads.iterator();
 
         while (payloadIterator.hasNext()){
-            DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
+            DnslogInterface dnslog = new DnsLog(callbacks, dnsName).run();
             String dnsurl = dnslog.getRandomDnsUrl();
             String versionPayload = payloadIterator.next();
             String version = versionPayload.substring(0,versionPayload.indexOf(";"));
@@ -157,7 +157,7 @@ public class versionDetect extends BaseScan {
             return issuses;
         }
         //加入二次验证后需要在最后进行判断
-        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,versionList);
+        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks,dnsName).run(),randomList,iHttpRequestResponseList,payloads,versionList);
         return issuses;
     }
 

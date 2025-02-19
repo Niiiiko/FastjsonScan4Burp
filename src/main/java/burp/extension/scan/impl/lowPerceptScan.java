@@ -24,8 +24,8 @@ import static burp.utils.Customhelps.tabFormat;
 public class lowPerceptScan extends BaseScan {
 
 
-    public lowPerceptScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
-        super(callbacks, iHttpRequestResponse, helpers, isBypass);
+    public lowPerceptScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass,String dnsName) {
+        super(callbacks, iHttpRequestResponse, helpers, isBypass, dnsName);
     }
 
     @Override
@@ -81,9 +81,9 @@ public class lowPerceptScan extends BaseScan {
             }
         List<String> payloads = this.yamlReader.getStringList("application.lowPerceptionScan.config.dnslogPayloads");
         Iterator<String> payloadIterator = payloads.iterator();
-
+//        getDnslogName();
         while (payloadIterator.hasNext()){
-            DnslogInterface dnslog = new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run();
+            DnslogInterface dnslog = new DnsLog(callbacks, dnsName).run();
             String dnsurl = dnslog.getRandomDnsUrl();
             String payload = payloadIterator.next();
             payload = payload.replace("dnslog-url",dnsurl);
@@ -141,7 +141,7 @@ public class lowPerceptScan extends BaseScan {
         if (!issuses.isEmpty()){
             return issuses;
         }
-        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, yamlReader.getString("dnsLogModule.provider")).run(),randomList,iHttpRequestResponseList,payloads,null);
+        issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, dnsName).run(),randomList,iHttpRequestResponseList,payloads,null);
         return issuses;
     }
 

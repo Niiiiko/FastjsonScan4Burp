@@ -5,6 +5,7 @@ import burp.utils.YamlReader;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,30 +20,32 @@ public class BaseSettingTag {
     private JCheckBox isScanCookieJsonBox;
     private JCheckBox isScanJsonBox;
     private JCheckBox isScanBodyJsonBox;
-
+    private IBurpExtenderCallbacks callbacks;
     private JCheckBox isStartCmdEchoExtensionBox;
     private JCheckBox isStartRemoteCmdExtensionBox;
+    private String dnslogName;
 
     public BaseSettingTag(IBurpExtenderCallbacks callbacks, JTabbedPane tabs, YamlReader yamlReader) {
+        this.callbacks = callbacks;
         JPanel baseSetting = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
         this.yamlReader = yamlReader;
+        // 添加下拉框
+//          # DnsLogCn = http://dnslog.cn的接口
+//  # BurpDnsLog = burp自带的dnslog接口
+//  # CeyeDnslog = http://ceye.io的接口
+//  # EyesDnslog = https://eyes.sh的接口
+        String[] options = {"DnsLogCn", "BurpDnsLog", "CeyeDnslog","EyesDnslog"}; // 下拉框选项
+        JComboBox<String> comboBox = addComboBox(baseSetting, c, "dnslog平台选择:", options);
 
         this.input1_1(baseSetting, c);
         this.input1_2(baseSetting, c);
         this.input1_3(baseSetting, c);
-//        this.input2_1(baseSetting, c);
-//        this.input2_2(baseSetting, c);
-//        this.input2_3(baseSetting, c);
-//        this.input2_4(baseSetting, c);
-//        this.input2_5(baseSetting, c);
-//        this.input2_6(baseSetting, c);
-
         this.input3_1(baseSetting, c);
         this.input3_2(baseSetting, c);
         this.input3_3(baseSetting, c);
         this.input3_4(baseSetting, c);
-
+//        this.input4_1(baseSetting, c);
         tabs.addTab("基本设置", baseSetting);
     }
 
@@ -72,6 +75,55 @@ public class BaseSettingTag {
         c.gridx = 0;
         c.gridy = 3;
         baseSetting.add(this.isStartBypass, c);
+    }
+
+//    private void input4_1(JPanel baseSetting, GridBagConstraints c) {
+//        JLabel br_lbl_3_1 = new JLabel("dnslog平台选择");
+//        br_lbl_3_1.setForeground(new Color(255, 89, 18));
+//        br_lbl_3_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_3_1.getFont().getSize() + 2));
+//        c.insets = new Insets(15, 5, 5, 5);
+//        c.gridx = 0;
+//        c.gridy = 9;
+//        baseSetting.add(br_lbl_3_1, c);
+//    }
+    private JComboBox<String> addComboBox(JPanel baseSetting, GridBagConstraints c, String labelText, String[] options) {
+        // 创建标签
+        JLabel label = new JLabel(labelText);
+        label.setForeground(new Color(255,89,18));
+        label.setFont(new Font("Serif", Font.PLAIN, label.getFont().getSize() + 2));
+        c.insets = new Insets(15, 5, 5, 5);
+        c.gridx = 0;
+        c.gridy = 10;
+        c.anchor = GridBagConstraints.WEST;
+        baseSetting.add(label, c);
+        String yamlDnsname = this.yamlReader.getString("dnsLogModule.provider");
+        this.setDnslogName(yamlDnsname);
+        int id = 0;
+        for (int i = 0; i < options.length; i++) {
+            if (options[i].equals(yamlDnsname)){
+                id = i;
+                break;
+            }
+//            {
+//                PrintWriter printWriter = new PrintWriter(callbacks.getStderr(), true);
+//                printWriter.println("config.yml parse error -> dnsLogModule.provider");
+//            }
+        }
+        // 创建下拉框
+        JComboBox<String> comboBox = new JComboBox<>(options);
+        comboBox.setSelectedIndex(id); // 默认选中第一个选项
+        c.gridx =  0;
+        c.gridy = 11;
+        baseSetting.add(comboBox, c);
+
+//         添加事件监听器
+        comboBox.addActionListener(e -> {
+            String selectedOption = (String) comboBox.getSelectedItem();
+            callbacks.printOutput("用户选择了: " + selectedOption);
+            setDnslogName(selectedOption);
+        });
+
+        return comboBox;
     }
 
 //    private void input2_1(JPanel baseSetting, GridBagConstraints c) {
@@ -176,6 +228,12 @@ public class BaseSettingTag {
 
     public Boolean isStartBypass() {
         return this.isStartBypass.isSelected();
+    }
+    public void setDnslogName(String name) {
+        this.dnslogName = name;
+    }
+    public String getDnslogName() {
+        return dnslogName;
     }
 
     public Boolean isStartCmdEchoExtension() {

@@ -24,8 +24,8 @@ import static burp.utils.Customhelps.tabFormat;
  */
 public class libraryDetect extends BaseScan {
 
-    public libraryDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass) {
-        super(callbacks, iHttpRequestResponse, helpers, isBypass);
+    public libraryDetect(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass,String dnsName) {
+        super(callbacks, iHttpRequestResponse, helpers, isBypass,dnsName);
     }
 
     @Override
@@ -68,7 +68,6 @@ public class libraryDetect extends BaseScan {
             exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload.replace("libraries",library),bodyContent);
             boolean isMatch = bodyContent.contains(library.toLowerCase());
             boolean isSimilarity = Customhelps.isSimilarity(errorClassHttpResponse, customBurpUrl.getHttpResponseBody());
-            //todo 添加布尔匹配函数
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
             if (flag){
                 issus = new Issus(customBurpUrl.getHttpRequestUrl(),

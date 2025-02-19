@@ -13,6 +13,8 @@ import burp.IBurpExtenderCallbacks;
 public class YamlReader {
     private static YamlReader instance;
     private static Map<String, Map<String, Object>> properties = new HashMap<>();
+    private static Path configPath = null;
+    private static long lastModified; // 记录文件最后修改时间
     private static final String CONFIG_CONTENTS = "# 插件启动项\n" +
             "isStart: true\n" +
             "isStartBypass: false\n" +
@@ -290,7 +292,9 @@ public class YamlReader {
         CreateConfig(callbacks);
         path = callbacks.getExtensionFilename().substring(0,lastIndexOf) + File.separator + "resources/config.yml";
         File f = new File(path);
+        this.configPath = f.toPath();
         properties = new Yaml().load(new FileInputStream(f));
+//        reloadConfig(callbacks);
     }
 
     public static synchronized YamlReader getInstance(IBurpExtenderCallbacks callbacks) {
@@ -298,30 +302,52 @@ public class YamlReader {
             try {
                 instance = new YamlReader(callbacks);
             } catch (FileNotFoundException e) {
-                e.printStackTrace(new PrintWriter(callbacks.getStderr(), true));
+                callbacks.printError(e.toString());
+//                instance = instance.reloadConfig(callbacks); // 每次获取实例时检查更新 instance.reloadConfig(); // 每次获取实例时检查更新
             }
+        }else {
+             instance.reloadConfig(callbacks);
         }
         return instance;
+    }
+    // 新增：重新加载配置文件方法
+    public static synchronized void reloadConfig(IBurpExtenderCallbacks callbacks) {
+        try {
+            int lastIndexOf = callbacks.getExtensionFilename().lastIndexOf(File.separator);
+            configPath = Paths.get(callbacks.getExtensionFilename().substring(0,lastIndexOf) + File.separator + "resources/config.yml");
+            File file = configPath.toFile();
+            if (file.exists()) {
+                long currentModified = file.lastModified();
+                if (currentModified > lastModified) {
+                    properties = new Yaml().load(new FileInputStream(file));
+                    lastModified = currentModified;
+                    callbacks.printOutput("配置文件已热更新");
+                }
+            }
+        } catch (IOException e) {
+            callbacks.printError("配置重载失败: " + e.getMessage());
+        }
     }
     public void CreateConfig(IBurpExtenderCallbacks callbacks){
         int lastIndexOf = callbacks.getExtensionFilename().lastIndexOf(File.separator);
         String p = callbacks.getExtensionFilename().substring(0, lastIndexOf);
         Path path = Paths.get(p);
         Path resourceDir = path.resolve("resources");
+        PrintWriter printWriter = new PrintWriter(callbacks.getStdout(), true);
 
         try {
             Files.createDirectories(resourceDir);
             Path configFile = resourceDir.resolve("config.yml");
             if (!Files.exists(configFile)){
                 Files.write(configFile, CONFIG_CONTENTS.getBytes());
-                System.out.println("配置文件已生成: " + configFile);
+                printWriter.println("config.yml文件已生成");
+
             }else {
-                System.out.println("配置文件已存在，无需重新生成");
+                printWriter.println("config.yml文件已存在，无需重新生成");
             }
 
         } catch (IOException e) {
-            System.err.println("配置文件生成失败: " + e.getMessage());
-            throw new RuntimeException(e);
+            new PrintWriter(callbacks.getStderr(), true).println("配置文件生成失败: " + e.getMessage());
         }
 
     }

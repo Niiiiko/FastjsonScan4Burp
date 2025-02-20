@@ -59,14 +59,13 @@ public class libraryDetect extends BaseScan {
                 newRequestResonse = run(payload.replace("libraries",library),jsonKey);
             }
             String bodyContent = customBurpUrl.getHttpResponseBody();
-            // 捕获api.ceye 503异常，避免导致issus未更新
 
             if(bodyContent == null|| bodyContent.length()<=0){
                 continue;
             }
             bodyContent = bodyContent.toLowerCase();
             exportLogs(getExtensionName(),helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString(),jsonKey,payload.replace("libraries",library),bodyContent);
-            boolean isMatch = bodyContent.contains(library.toLowerCase());
+            boolean isMatch = (bodyContent.contains(library.toLowerCase()) && bodyContent.toLowerCase().contains("cast")); //新增一个匹配can no cast to char
             boolean isSimilarity = Customhelps.isSimilarity(errorClassHttpResponse, customBurpUrl.getHttpResponseBody());
                 // 碰到能检测出多个payload，则更新第一个issus的状态为[+]，后续payload直接add [+]issus进去
             if (flag){

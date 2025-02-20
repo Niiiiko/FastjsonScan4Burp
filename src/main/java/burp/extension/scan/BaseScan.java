@@ -184,6 +184,18 @@ public abstract class BaseScan {
                 String endTime = sdf.format(d);
                 this.stdout.println(String.format("检测时间： %s", endTime));
                 this.stdout.println("========================================\n");
+                if (dnsLogAllContent == null){
+                    issus = new Issus(customBurpUrl.getHttpRequestUrl(),
+                            customBurpUrl.getRequestMethod(),
+                            this.getExtensionName(),
+                            customBurpUrl.getHttpResponseStatus(),
+                            null,
+                            tabFormat(ScanResultType.NOT_FOUND),
+                            httpRequestResponseList.get(i),
+                            Issus.State.SAVE);
+                    issuses.add(issus);
+                    return issuses;
+                }
                 // dnslog 内容匹配判断
                 if (!dnsLogAllContent.contains(random)) {
                     if ((i + 1) != randlist.size()) {

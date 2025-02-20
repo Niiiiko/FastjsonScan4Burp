@@ -132,20 +132,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             }
         }
         FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
-        // 判断数据包中是否存在json，有则加入到tags中
-        if (!findJsons.isParamsJson().isFlag()&&!findJsons.isContypeJson().isFlag()) {
-            String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
-            String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
-            String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
-            this.tags.getScanQueueTagClass().add(
-                    method,
-                    method,
-                    url,
-                    statusCode,
-                    "[×] json not find",
-                    iHttpRequestResponse);
-            return null;
-        }
         List<Issus> tabIssues = null;
         // 判断是否开启低感知插件
         if (this.tags.getBaseSettingTagClass().isStartLowPercept()) {
@@ -209,6 +195,17 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         String key = null;
         BaseScan baseScan = null;
         int id;
+        // 判断数据包中是否存在json，有则加入到tags中
+        if (!findJsons.isParamsJson().isFlag()&&!findJsons.isContypeJson().isFlag()) {
+            this.tags.getScanQueueTagClass().add(
+            method,
+            method,
+            url,
+            statusCode,
+            "[×] json not find",
+            iHttpRequestResponse);
+            return null;
+        }
         // 判断数据包中是否存在json，有则加入到tags中
         if (findJsons.isParamsJson().isFlag()) {
             // 先添加任务
@@ -472,7 +469,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
     @Override
     public List<JMenuItem> createMenuItems(IContextMenuInvocation iContextMenuInvocation) {
         List<JMenuItem> menuItems = new ArrayList<>();
-        if (iContextMenuInvocation.getToolFlag() != IBurpExtenderCallbacks.TOOL_REPEATER){
+        if (iContextMenuInvocation.getToolFlag() != IBurpExtenderCallbacks.TOOL_REPEATER && iContextMenuInvocation.getToolFlag()!=IBurpExtenderCallbacks.TOOL_PROXY){
             return menuItems;
         }
         JMenuItem jMenuItem = new JMenuItem("远程命令拓展扫描");

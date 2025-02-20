@@ -96,7 +96,6 @@ public class RemoteScan extends BaseScan {
         if (!issuses.isEmpty()){
             return issuses;
         }
-        //todo 修正二次验证函数判断
         issuses = checkoutDnslog(getExtensionName(),new DnsLog(callbacks, dnsName).run(),randomList,iHttpRequestResponseList,payloads,null);
         return issuses;
     }

@@ -17,8 +17,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -31,29 +29,27 @@ import java.util.concurrent.CompletableFuture;
  */
 public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScannerCheck,IContextMenuFactory{
     private IBurpExtenderCallbacks callbacks;
-    public String name = "FastjsonScan";
-    private IScanIssue iScanIssue;
-    private PrintWriter printWriter;
-
+    public String name = "FastjsonScan4Burp";
+    public String version = "1.0";
     private IExtensionHelpers helpers;
     private Tags tags;
     private YamlReader yamlReader;
     private PrintWriter stdout;
-    private PrintWriter stderr;
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
-
         this.callbacks = callbacks;
-        callbacks.setExtensionName("FastJsonScan");
+        callbacks.setExtensionName(name);
         this.helpers = callbacks.getHelpers();
         this.stdout = new PrintWriter(callbacks.getStdout(), true);
         this.tags = new Tags(callbacks, name);
+        this.stdout.println("================插件正在加载================");
+        this.stdout.println("插件名称： " + name);
+        this.stdout.println("当前版本： " + version);
         this.yamlReader = YamlReader.getInstance(callbacks);
-
         callbacks.addSuiteTab(this.tags);
         callbacks.registerScannerCheck(this);
         callbacks.registerContextMenuFactory(this);
-        this.stdout.println("================插件正在加载================");
+
         this.stdout.println("配置文件加载成功");
         this.stdout.println(String.format("当前dns平台为： %s", this.tags.getBaseSettingTagClass().getDnslogName()));
         try {
@@ -73,7 +69,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse iHttpRequestResponse) {
-//        this.yamlReader = YamlReader.getInstance(callbacks);
         // 判断是否开启插件
         if (!this.tags.getBaseSettingTagClass().isStart()) {
             return null;
@@ -138,7 +133,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         }
         FindJsons findJsons = new FindJsons(helpers, iHttpRequestResponse);
         // 判断数据包中是否存在json，有则加入到tags中
-        if (!findJsons.isParamsJson().isFlag()||!findJsons.isContypeJson().isFlag()) {
+        if (!findJsons.isParamsJson().isFlag()&&!findJsons.isContypeJson().isFlag()) {
             String url = helpers.analyzeRequest(iHttpRequestResponse).getUrl().toString();
             String method = helpers.analyzeRequest(iHttpRequestResponse).getMethod();
             String statusCode = String.valueOf(helpers.analyzeResponse(iHttpRequestResponse.getResponse()).getStatusCode());
@@ -184,7 +179,7 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
 
         if (this.tags.getBaseSettingTagClass().isStartCmdEchoExtension()) {
             try {
-                tabIssues = scan(iHttpRequestResponse,"LocalScan");
+                tabIssues = scan(iHttpRequestResponse,"CmdEchoScan");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -302,29 +297,6 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
     public List<IScanIssue> doActiveScan(IHttpRequestResponse iHttpRequestResponse, IScannerInsertionPoint iScannerInsertionPoint) {
         return null;
     }
-    // 持续写入方法（线程安全）
-//    public static synchronized void ResultOutput(List<Issus> issues) {
-//        int lastIndexOf = callbacks.getExtensionFilename().lastIndexOf(File.separator);
-//        String path = "";
-//        path = callbacks.getExtensionFilename().substring(0,lastIndexOf) + File.separator + "resources/Result.txt";
-//
-//        try (BufferedWriter writer = Files.newBufferedWriter(
-//                OUTPUT_PATH,
-//                StandardOpenOption.CREATE,
-//                StandardOpenOption.APPEND
-//        )) {
-//            for (Issus issue : issues) {
-//                if (issue.hasSpecialMarker()) {
-//                    writer.write(issue.getResult());
-//                    writer.newLine(); // 换行分隔
-//                }
-//            }
-//            writer.flush();
-//        } catch (IOException e) {
-//            System.err.println("写入文件失败: " + e.getMessage());
-//            e.printStackTrace();
-//        }
-//    }
     private synchronized void ResultOutput(Issus issus) {
         int lastIndexOf = callbacks.getExtensionFilename().lastIndexOf(File.separator);
         String path = "";
@@ -503,10 +475,10 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         if (iContextMenuInvocation.getToolFlag() != IBurpExtenderCallbacks.TOOL_REPEATER){
             return menuItems;
         }
-        JMenuItem jMenuItem = new JMenuItem("出网扫描");
+        JMenuItem jMenuItem = new JMenuItem("远程命令拓展扫描");
         jMenuItem.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"RemoteScan"));
-        JMenuItem jMenuItem2 = new JMenuItem("不出网扫描");
-        jMenuItem2.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"LocalScan"));
+        JMenuItem jMenuItem2 = new JMenuItem("命令回显拓展扫描");
+        jMenuItem2.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"CmdEchoScan"));
         JMenuItem jMenuItem3 = new JMenuItem("版本探测");
         jMenuItem3.addActionListener(new ContextMenuActionListener(iContextMenuInvocation,"versionDetect"));
         JMenuItem jMenuItem4 = new JMenuItem("依赖探测");

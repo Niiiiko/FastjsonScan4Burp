@@ -8,7 +8,7 @@ import burp.bean.Issus;
 import burp.bean.ScanResultType;
 import burp.extension.scan.BaseScan;
 import burp.utils.Customhelps;
-import burp.utils.YamlReader;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -16,14 +16,14 @@ import java.util.List;
 import static burp.utils.Customhelps.tabFormat;
 
 /**
- * @ClassName: LocalScan
+ * @ClassName: CmdEchoScan
  * @Auther: niko
  * @Date: 2025/2/7 22:45
  * @Description:
  */
-public class LocalScan extends BaseScan {
+public class CmdEchoScan extends BaseScan {
 
-    public LocalScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass,String dnsName) {
+    public CmdEchoScan(IBurpExtenderCallbacks callbacks, IHttpRequestResponse iHttpRequestResponse, IExtensionHelpers helpers,boolean isBypass,String dnsName) {
         super(callbacks, iHttpRequestResponse, helpers, isBypass, dnsName);
     }
 
@@ -102,6 +102,6 @@ public class LocalScan extends BaseScan {
 
     @Override
     public String getExtensionName() {
-        return "LocalScan";
+        return "CmdEchoScan";
     }
 }

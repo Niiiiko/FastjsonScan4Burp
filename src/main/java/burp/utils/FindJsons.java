@@ -65,28 +65,6 @@ public class FindJsons{
         return targetInfo;
     }
 
-//    public TargetInfo isJson(String str) {
-//        String json = null;
-//        boolean result = false;
-//        if (str != null && !str.isEmpty()) {
-//            try {
-//                str = URLDecoder.decode(str, "utf-8");
-//            } catch (UnsupportedEncodingException e) {
-//                throw new RuntimeException(e);
-//            }
-//            str = str.trim();
-//            if(str.indexOf("{") !=-1 && str.lastIndexOf("}")!=-1){
-//                json = str.substring(str.indexOf("{"),str.lastIndexOf("}")+1);
-//                result = true;
-//            }else if (str.indexOf("[") !=-1 && str.lastIndexOf("]")!=-1){
-//                json = str.substring(str.indexOf("["),str.lastIndexOf("]")+1);
-//                result = true;
-//            }
-//        }
-//        TargetInfo targetInfo = new TargetInfo(result, null);
-//        return targetInfo;
-//    }
-
     // post content-type:json
     public TargetInfo isContypeJson(){
         String s = String.valueOf(requestInfo.getContentType());

@@ -20,6 +20,18 @@ https://github.com/safe6Sec/Fastjson
 - bypass waf模块
 - dns平台实时切换
 
+## 扫描原理
+插件会自动发现数据包GET/POST请求中包含有json的value或请求体是否为Content-Type:application/json。判断依据为是否包含有{}或[]
+GET中value存在json
+<img width="1129" alt="image" src="https://github.com/user-attachments/assets/3bc8f04d-6d51-4f39-adba-0923eabe92c8" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/c023b4b4-0f33-4bd4-baa0-7756c1594403" />
+POST中value存在json
+<img width="1158" alt="image" src="https://github.com/user-attachments/assets/451164de-f698-406f-b806-9bd853f68dfb" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/8f37e77a-2d49-4812-bd77-dbbba3e1d658" />
+Content-Type为json（以下案例均是，不多赘述）
+检测出json后，默认会调用fastjson探测、远程命令执行探测及不出网探测，各模块扫描原理详见下文。
+
+
 ## 使用手册
 ### 安装
 初次加载会在当前目录下创建resources/config.yml文件。

@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScannerCheck,IContextMenuFactory{
     private IBurpExtenderCallbacks callbacks;
     public String name = "FastjsonScan4Burp";
-    public String version = "1.0";
+    public String version = "1.0.1";
     private IExtensionHelpers helpers;
     private Tags tags;
     private YamlReader yamlReader;
@@ -46,20 +46,18 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         this.stdout.println("插件名称： " + name);
         this.stdout.println("当前版本： " + version);
         this.yamlReader = YamlReader.getInstance(callbacks);
-        callbacks.addSuiteTab(this.tags);
-        callbacks.registerScannerCheck(this);
-        callbacks.registerContextMenuFactory(this);
 
         this.stdout.println("配置文件加载成功");
         this.stdout.println(String.format("当前dns平台为： %s", this.tags.getBaseSettingTagClass().getDnslogName()));
-        try {
-            new DnsLog(callbacks, this.tags.getBaseSettingTagClass().getDnslogName()).run();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            new DnsLog(callbacks, this.tags.getBaseSettingTagClass().getDnslogName()).run();
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
         this.stdout.println("下载地址: https://github.com/Niiiiko/FastjsonScan");
         this.stdout.println("================插件加载成功================");
-
+        callbacks.registerScannerCheck(this);
+        callbacks.registerContextMenuFactory(this);
     }
 
     @Override

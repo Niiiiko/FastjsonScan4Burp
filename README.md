@@ -8,6 +8,8 @@ https://github.com/pmiaowu/BurpFastJsonScan
 https://github.com/lemono0/FastJsonParty
 https://github.com/safe6Sec/Fastjson
 ```
+## 更新记录
+0228：1.修复加载插件后导致列表插件后的其他插件不可用情况 2.修复了yml文件生成时可能出现报错的情况，添加utf-8标准读取文件 
 ## 工具模块
 
 目前插件具有的功能模块：

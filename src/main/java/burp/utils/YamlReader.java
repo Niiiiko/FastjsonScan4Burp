@@ -1,6 +1,7 @@
 package burp.utils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -324,7 +325,10 @@ public class YamlReader {
             if (file.exists()) {
                 long currentModified = file.lastModified();
                 if (currentModified > lastModified) {
-                    properties = new Yaml().load(new FileInputStream(file));
+                    FileInputStream fis = new FileInputStream(file);
+                    // 显式指定 UTF-8 编码读取
+                    InputStreamReader reader = new InputStreamReader(fis, StandardCharsets.UTF_8);
+                    properties = new Yaml().load(reader);
                     lastModified = currentModified;
                     callbacks.printOutput("配置文件已热更新");
                 }

@@ -8,6 +8,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import burp.*;
 
@@ -155,6 +156,7 @@ public class ScanQueueTag extends AbstractTableModel implements IMessageEditorCo
             String startTime = sdf.format(d);
 
             int id = this.Udatas.size();
+//            if ()
             this.Udatas.add(
                     new TablesData(
                             id,
@@ -194,7 +196,6 @@ public class ScanQueueTag extends AbstractTableModel implements IMessageEditorCo
         Date d = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String endTime = sdf.format(d);
-
         synchronized (this.Udatas) {
             this.Udatas.set(
                     id,
@@ -215,10 +216,31 @@ public class ScanQueueTag extends AbstractTableModel implements IMessageEditorCo
         }
     }
 
+    // 在ScanQueueTag类中添加以下方法
+    public void clearAllRecords() {
+        synchronized (this.Udatas) {
+            // 清空数据存储
+            Udatas.clear();
+
+            // 清空当前显示项
+            currentlyDisplayedItem = null;
+
+            // 清除请求/响应面板内容
+            HRequestTextEditor.setMessage(new byte[0], true);
+            HResponseTextEditor.setMessage(new byte[0], false);
+
+            // 触发表格更新
+            fireTableDataChanged();
+        }
+    }
+
     /**
      * 自定义Table
      */
     private class URLTable extends JTable {
+        private TableRowSorter<TableModel> sorter;
+        private JPopupMenu filterMenu;
+
         public URLTable(TableModel tableModel) {
             super(tableModel);
         }

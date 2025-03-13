@@ -26,7 +26,7 @@ public class Tags implements ITab {
         this.scanQueueTag = scanQueueTag;
 
         // 基本设置-窗口
-        BaseSettingTag baseSettingTag = new BaseSettingTag(callbacks, tabs, yamlReader);
+        BaseSettingTag baseSettingTag = new BaseSettingTag(callbacks, tabs, yamlReader,scanQueueTag);
         this.baseSettingTag = baseSettingTag;
 
         // 自定义组件-导入

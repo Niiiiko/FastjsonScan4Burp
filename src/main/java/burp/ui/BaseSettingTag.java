@@ -24,12 +24,16 @@ public class BaseSettingTag {
     private JCheckBox isStartCmdEchoExtensionBox;
     private JCheckBox isStartRemoteCmdExtensionBox;
     private String dnslogName;
+    private String messageType;
+    private ScanQueueTag scanQueueTag;
 
-    public BaseSettingTag(IBurpExtenderCallbacks callbacks, JTabbedPane tabs, YamlReader yamlReader) {
+
+    public BaseSettingTag(IBurpExtenderCallbacks callbacks, JTabbedPane tabs, YamlReader yamlReader,ScanQueueTag scanQueueTag) {
         this.callbacks = callbacks;
         JPanel baseSetting = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
         this.yamlReader = yamlReader;
+        this.scanQueueTag = scanQueueTag;
         // 添加下拉框
 //          # DnsLogCn = http://dnslog.cn的接口
 //  # BurpDnsLog = burp自带的dnslog接口
@@ -38,6 +42,8 @@ public class BaseSettingTag {
         String[] options = {"DnsLogCn", "BurpDnsLog", "CeyeDnslog","EyesDnslog"}; // 下拉框选项
         JComboBox<String> comboBox = addComboBox(baseSetting, c, "dnslog平台选择:", options);
 
+        String[] options2 = {"ALL", "INFO", "VULN"}; // 下拉框选项
+        JComboBox<String> comboBox2 = addComboBox2(baseSetting, c, "UI显示选择:", options2);
         this.input1_1(baseSetting, c);
         this.input1_2(baseSetting, c);
         this.input1_3(baseSetting, c);
@@ -45,7 +51,8 @@ public class BaseSettingTag {
         this.input3_2(baseSetting, c);
         this.input3_3(baseSetting, c);
         this.input3_4(baseSetting, c);
-//        this.input4_1(baseSetting, c);
+        this.input4_1(baseSetting, c);
+        this.input4_2(baseSetting, c);
         tabs.addTab("基本设置", baseSetting);
     }
 
@@ -76,16 +83,6 @@ public class BaseSettingTag {
         c.gridy = 3;
         baseSetting.add(this.isStartBypass, c);
     }
-
-//    private void input4_1(JPanel baseSetting, GridBagConstraints c) {
-//        JLabel br_lbl_3_1 = new JLabel("dnslog平台选择");
-//        br_lbl_3_1.setForeground(new Color(255, 89, 18));
-//        br_lbl_3_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_3_1.getFont().getSize() + 2));
-//        c.insets = new Insets(15, 5, 5, 5);
-//        c.gridx = 0;
-//        c.gridy = 9;
-//        baseSetting.add(br_lbl_3_1, c);
-//    }
     private JComboBox<String> addComboBox(JPanel baseSetting, GridBagConstraints c, String labelText, String[] options) {
         // 创建标签
         JLabel label = new JLabel(labelText);
@@ -104,10 +101,6 @@ public class BaseSettingTag {
                 id = i;
                 break;
             }
-//            {
-//                PrintWriter printWriter = new PrintWriter(callbacks.getStderr(), true);
-//                printWriter.println("config.yml parse error -> dnsLogModule.provider");
-//            }
         }
         // 创建下拉框
         JComboBox<String> comboBox = new JComboBox<>(options);
@@ -125,61 +118,6 @@ public class BaseSettingTag {
 
         return comboBox;
     }
-
-//    private void input2_1(JPanel baseSetting, GridBagConstraints c) {
-//        JLabel br_lbl_2_1 = new JLabel("扫描类型设置");
-//        br_lbl_2_1.setForeground(new Color(255, 89, 18));
-//        br_lbl_2_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_2_1.getFont().getSize() + 2));
-//        c.insets = new Insets(15, 5, 5, 5);
-//        c.gridx = 0;
-//        c.gridy = 3;
-//        baseSetting.add(br_lbl_2_1, c);
-//    }
-
-//    private void input2_2(JPanel baseSetting, GridBagConstraints c) {
-//        this.isScanGetJsonBox = new JCheckBox("扫描Get参数的Json", this.yamlReader.getBoolean("scan.type.isScanGetJson"));
-//        this.isScanGetJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanGetJsonBox.getFont().getSize()));
-//        c.insets = new Insets(5, 5, 5, 5);
-//        c.gridx = 0;
-//        c.gridy = 4;
-//        baseSetting.add(this.isScanGetJsonBox, c);
-//    }
-//
-//    private void input2_3(JPanel baseSetting, GridBagConstraints c) {
-//        this.isScanPostJsonBox = new JCheckBox("扫描Post参数的Json", this.yamlReader.getBoolean("scan.type.isScanPostJson"));
-//        this.isScanPostJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanPostJsonBox.getFont().getSize()));
-//        c.insets = new Insets(5, 5, 5, 5);
-//        c.gridx = 0;
-//        c.gridy = 5;
-//        baseSetting.add(this.isScanPostJsonBox, c);
-//    }
-//
-//    private void input2_4(JPanel baseSetting, GridBagConstraints c) {
-//        this.isScanCookieJsonBox = new JCheckBox("扫描Cookie参数的Json", this.yamlReader.getBoolean("scan.type.isScanCookieJson"));
-//        this.isScanCookieJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanCookieJsonBox.getFont().getSize()));
-//        c.insets = new Insets(5, 5, 5, 5);
-//        c.gridx = 0;
-//        c.gridy = 6;
-//        baseSetting.add(this.isScanCookieJsonBox, c);
-//    }
-//
-//    private void input2_5(JPanel baseSetting, GridBagConstraints c) {
-//        this.isScanJsonBox = new JCheckBox("扫描Post请求的Json", this.yamlReader.getBoolean("scan.type.isScanJson"));
-//        this.isScanJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanJsonBox.getFont().getSize()));
-//        c.insets = new Insets(5, 5, 5, 5);
-//        c.gridx = 0;
-//        c.gridy = 7;
-//        baseSetting.add(this.isScanJsonBox, c);
-//    }
-//
-//    private void input2_6(JPanel baseSetting, GridBagConstraints c) {
-//        this.isScanBodyJsonBox = new JCheckBox("扫描HTTP请求正文的Json", this.yamlReader.getBoolean("scan.type.isScanBodyJson"));
-//        this.isScanBodyJsonBox.setFont(new Font("Serif", Font.PLAIN, this.isScanBodyJsonBox.getFont().getSize()));
-//        c.insets = new Insets(5, 5, 5, 5);
-//        c.gridx = 0;
-//        c.gridy = 8;
-//        baseSetting.add(this.isScanBodyJsonBox, c);
-//    }
 
     private void input3_1(JPanel baseSetting, GridBagConstraints c) {
         JLabel br_lbl_3_1 = new JLabel("被动扫描模块配置");
@@ -217,6 +155,78 @@ public class BaseSettingTag {
         baseSetting.add(this.isStartRemoteCmdExtensionBox, c);
     }
 
+    private void input4_1(JPanel baseSetting, GridBagConstraints c) {
+        JLabel br_lbl_3_1 = new JLabel("ui界面模块");
+        br_lbl_3_1.setForeground(new Color(255, 89, 18));
+        br_lbl_3_1.setFont(new Font("Serif", Font.PLAIN, br_lbl_3_1.getFont().getSize() + 2));
+        c.insets = new Insets(15, 5, 5, 5);
+        c.gridx = 0;
+        c.gridy = 12;
+        baseSetting.add(br_lbl_3_1, c);
+    }
+    private void input4_2(JPanel baseSetting, GridBagConstraints c) {
+        // 清空按钮
+        JButton clearBtn = new JButton("清空扫描队列");
+        clearBtn.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                    baseSetting,
+                    "确认清空所有扫描记录？\n此操作不可逆！",
+                    "警告",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                SwingUtilities.invokeLater(() -> {
+                    scanQueueTag.clearAllRecords();
+                    callbacks.printOutput("[操作日志] 扫描队列已清空");
+                });
+            }
+        });
+
+        // 布局参数
+        c.insets = new Insets(15, 5, 5, 5);
+        c.gridx = 0;
+        c.gridy = 13;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        baseSetting.add(clearBtn, c);
+    }
+    private JComboBox<String> addComboBox2(JPanel baseSetting, GridBagConstraints c, String labelText, String[] options) {
+        // 创建标签
+        JLabel label = new JLabel(labelText);
+        label.setForeground(new Color(255,89,18));
+        label.setFont(new Font("Serif", Font.PLAIN, label.getFont().getSize() + 2));
+        c.insets = new Insets(15, 5, 5, 5);
+        c.gridx = 0;
+        c.gridy = 10;
+        c.anchor = GridBagConstraints.WEST;
+        baseSetting.add(label, c);
+        String uiMessage = this.yamlReader.getString("message");
+        this.setMessageType(uiMessage);
+        int id = 0;
+        for (int i = 0; i < options.length; i++) {
+            if (options[i].equals(uiMessage)){
+                id = i;
+                break;
+            }
+        }
+        // 创建下拉框
+        JComboBox<String> comboBox = new JComboBox<>(options);
+        comboBox.setSelectedIndex(id); // 默认选中第一个选项
+        c.gridx =  0;
+        c.gridy = 14;
+        baseSetting.add(comboBox, c);
+
+//         添加事件监听器
+        comboBox.addActionListener(e -> {
+            String selectedOption = (String) comboBox.getSelectedItem();
+            callbacks.printOutput("用户选择了: " + selectedOption);
+            setMessageType(selectedOption);
+        });
+
+        return comboBox;
+    }
+
     public Boolean isStart() {
         return this.isStartBox.isSelected();
     }
@@ -234,6 +244,13 @@ public class BaseSettingTag {
     }
     public String getDnslogName() {
         return dnslogName;
+    }
+
+    public void setMessageType(String name) {
+        this.messageType = name;
+    }
+    public String getMessageType() {
+        return messageType;
     }
 
     public Boolean isStartCmdEchoExtension() {

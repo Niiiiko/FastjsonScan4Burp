@@ -195,6 +195,8 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
         int id;
         // 判断数据包中是否存在json，有则加入到tags中
         if (!findJsons.isParamsJson().isFlag()&&!findJsons.isContypeJson().isFlag()) {
+            String messageType = this.tags.getBaseSettingTagClass().getMessageType();
+//            uiMessageFilter(messageType,);
             this.tags.getScanQueueTagClass().add(
             method,
             method,
@@ -286,6 +288,9 @@ public class FastjsonScan implements IBurpExtender,IExtensionStateListener,IScan
             }
         }
         return tabIssues;
+    }
+
+    private void uiMessageFilter() {
     }
 
     @Override
